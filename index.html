@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>7 Хоногийн Тайлан — ШШГБ</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--brand:#1a3a6b;--brand2:#2563b0}
+body{background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif;font-size:.93rem}
+.navbar{background:var(--brand)!important}
+.navbar-brand{font-weight:700;letter-spacing:.4px}
+.card{border:none;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.card-header{background:var(--brand);color:#fff;border-radius:10px 10px 0 0!important;font-weight:600}
+.sec-head{background:#e8edf8;border-left:4px solid var(--brand2);padding:7px 12px;
+          border-radius:4px;margin:18px 0 10px;font-weight:600;color:var(--brand)}
+.user-card{background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:10px 14px;
+           cursor:pointer;transition:.15s;display:flex;align-items:center;gap:12px}
+.user-card:hover{background:#f0f4ff;border-color:var(--brand2)}
+.avatar{background:var(--brand);color:#fff;border-radius:50%;width:38px;height:38px;
+        display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.85rem}
+input[type=number]{max-width:170px}
+.unit{color:#6c757d;font-size:.78rem;margin-left:3px}
+.view{display:none}.view.active{display:block}
+.spinner-wrap{display:flex;align-items:center;justify-content:center;min-height:200px}
+.tbl-input{width:110px;font-size:.82rem;padding:3px 6px}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark navbar-expand-lg mb-3">
+  <div class="container-fluid">
+    <span class="navbar-brand"><i class="bi bi-journal-text me-2"></i>7 Хоногийн Тайлан</span>
+    <div class="d-flex gap-2 ms-auto flex-wrap">
+      <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-house me-1"></i>Нүүр</button>
+      <button class="btn btn-sm btn-outline-light" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</button>
+      <button class="btn btn-sm btn-outline-light" onclick="showView('admin')"><i class="bi bi-gear me-1"></i>Admin</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3">
+<div id="toast-wrap" style="position:fixed;top:70px;right:16px;z-index:9999"></div>
+
+<!-- HOME -->
+<div id="view-home" class="view active">
+  <div class="row justify-content-center">
+   <div class="col-lg-7">
+    <div class="card mb-4">
+     <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-calendar-week me-2"></i><span id="home-week-label">...</span></span>
+      <span class="badge bg-light text-dark" id="home-week-dates"></span>
+     </div>
+     <div class="card-body" id="home-users-list">
+      <div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>
+     </div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div id="view-report" class="view">
+  <div class="row justify-content-center">
+   <div class="col-lg-9">
+    <div class="card">
+     <div class="card-header d-flex justify-content-between align-items-center">
+      <span id="report-title">Тайлан</span>
+      <div class="d-flex gap-2 align-items-center">
+       <span class="text-white-50 small" id="report-week-label"></span>
+       <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-arrow-left"></i></button>
+      </div>
+     </div>
+     <div class="card-body">
+      <div id="report-submitted-info"></div>
+      <form id="report-form" onsubmit="submitReport(event)">
+       <div id="report-fields"></div>
+       <div class="sec-head mt-4"><i class="bi bi-list-check me-1"></i>Ерөнхий тайлан</div>
+       <div class="row g-3">
+        <div class="col-12">
+         <label class="form-label fw-semibold">Энэ 7 хоногт хийсэн ажил</label>
+         <textarea class="form-control" id="f-hiiseh" name="hiiseh_ajil" rows="5" placeholder="Хийсэн ажлаа бичнэ үү..."></textarea>
+        </div>
+        <div class="col-12">
+         <label class="form-label fw-semibold">Дараа 7 хоногт хийх ажил</label>
+         <textarea class="form-control" id="f-hiikh" name="hiikh_ajil" rows="4" placeholder="Хийх ажлаа бичнэ үү..."></textarea>
+        </div>
+        <div class="col-12">
+         <label class="form-label fw-semibold">Тэмдэглэл / санал</label>
+         <textarea class="form-control" id="f-temdeg" name="temdegleltar" rows="2" placeholder="Нэмэлт тэмдэглэл..."></textarea>
+        </div>
+       </div>
+       <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn px-4" style="background:var(--brand);color:#fff" id="submit-btn">
+         <i class="bi bi-floppy me-1"></i>Хадгалах
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="showView('home')">Буцах</button>
+       </div>
+      </form>
+     </div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<!-- CONSOLIDATED -->
+<div id="view-consolidated" class="view">
+  <div class="row">
+   <div class="col-12">
+    <div class="card mb-3">
+     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><i class="bi bi-bar-chart me-2"></i>Нэгтгэсэн тайлан — <span id="cons-week-label"></span></span>
+      <div class="d-flex gap-2 align-items-center">
+       <select class="form-select form-select-sm" id="week-selector" onchange="loadConsolidated()" style="width:auto"></select>
+       <button class="btn btn-sm btn-outline-light" onclick="window.print()"><i class="bi bi-printer me-1"></i>Хэвлэх</button>
+      </div>
+     </div>
+     <div class="card-body" id="cons-body">
+      <div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>
+     </div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="view-admin" class="view">
+  <div class="row"><div class="col-lg-10 mx-auto">
+   <div class="card mb-4">
+    <div class="card-header"><i class="bi bi-person-plus me-2"></i>Алба хаагч нэмэх</div>
+    <div class="card-body">
+     <form onsubmit="adminAddUser(event)" class="row g-3 align-items-end">
+      <div class="col-md-2"><label class="form-label">Цол</label>
+       <input type="text" id="a-rank" class="form-control" placeholder="д/х"></div>
+      <div class="col-md-3"><label class="form-label">Нэр *</label>
+       <input type="text" id="a-name" class="form-control" required placeholder="О.Нэр"></div>
+      <div class="col-md-3"><label class="form-label">Хэлтэс *</label>
+       <select id="a-dept" class="form-select" required>
+        <option value="dotood_khyanalt">Дотоод хяналтын хэлтэс</option>
+        <option value="tsakhim_burtgel">Цахим бүртгэл, дүн шинжилгээний хэлтэс</option>
+        <option value="tolovlolt">Төлөвлөлт, дотоод ажлын хэлтэс</option>
+       </select></div>
+      <div class="col-md-3"><label class="form-label">Үүрэг *</label>
+       <select id="a-role" class="form-select" required id="a-role"></select></div>
+      <div class="col-md-1">
+       <button type="submit" class="btn w-100" style="background:var(--brand);color:#fff"><i class="bi bi-plus-lg"></i></button>
+      </div>
+     </form>
+    </div>
+   </div>
+   <div class="card">
+    <div class="card-header"><i class="bi bi-people me-2"></i>Алба хаагчдын жагсаалт</div>
+    <div class="card-body p-0">
+     <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+       <thead><tr><th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Үүрэг солих</th></tr></thead>
+       <tbody id="admin-users-table"></tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+  </div></div>
+</div>
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc,
+         query, where, orderBy, serverTimestamp, Timestamp }
+  from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB-XyNMXIVbRE3MS6U3WoGi_agyo4KSPTs",
+  authDomain: "ssdg-report.firebaseapp.com",
+  projectId: "ssdg-report",
+  storageBucket: "ssdg-report.firebasestorage.app",
+  messagingSenderId: "753852445137",
+  appId: "1:753852445137:web:753572ec39f2d3c1e3b0f0"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// ── Roles ──────────────────────────────────────────────
+const DEPT_NAMES = {
+  dotood_khyanalt: 'Дотоод хяналтын хэлтэс',
+  tsakhim_burtgel: 'Цахим бүртгэл, дүн шинжилгээний хэлтэс',
+  tolovlolt:       'Төлөвлөлт, дотоод ажлын хэлтэс',
+};
+const DEPT_ORDER = ['dotood_khyanalt','tsakhim_burtgel','tolovlolt'];
+
+const ROLE_LABELS = {
+  head:            'Хэлтсийн дарга',
+  zorchil:         'Зөрчил хариуцсан',
+  neg_tseg:        '1 цэгийн үйлчилгээ',
+  bus_orgodol:     'Бүс хариуцсан',
+  negtle_bus:      'Бүсийн нэгтгэгч',
+  tsakhim:         'Цахим бүртгэл',
+  hil:             'Хилийн хориг',
+  medee_too:       'Мэдээ, дүн шинжилгээ',
+  nekhemjlel:      'Шүүхийн нэхэмжлэл',
+  lavlagaa_negtle: 'Лавлагаа + нэгтгэгч',
+  orgodol_central: 'Өргөдөл, гомдол',
+  dotood_ajil:     'Дотоод ажил, хүний нөөц',
+  surgalt:         'Сургалт',
+  negtle_main:     'Нэгтгэгч (ерөнхий)',
+};
+
+// Role → form section definitions
+const ROLE_FORMS = {
+  neg_tseg:[{t:'1 цэгийн үйлчилгээ',f:[
+    {id:'niit_irsen',l:'Нийт хандсан иргэн',u:'иргэн'},
+    {id:'shdg_guitsetgel',l:'Шийдвэр гүйцэтгэлийн талаар мэдээлэл авсан',u:'иргэн'},
+    {id:'busad_asuudlaar',l:'Бусад асуудлаар мэдээлэл авсан',u:'иргэн'},
+    {id:'holbon_shiydsersen',l:'Холбон шийдвэрлэсэн',u:'иргэн'},
+    {id:'lavlagaa_olgos',l:'Өр төлбөргүй лавлагаа олгосон',u:'иргэн'},
+  ]}],
+  zorchil:[
+    {t:'Тухайн 7 хоногт',f:[
+      {id:'gomDol_too',l:'Хүлээн авсан зөрчлийн гомдол мэдээлэл',u:'ш'},
+      {id:'torguul_hun',l:'Торгуульд татагдсан',u:'хүн'},
+      {id:'torguul_dun',l:'Торгуулийн мөнгөн дүн',u:'₮',s:'any'},
+      {id:'barivch_hun',l:'Баривчлах шийтгэлд татагдсан',u:'хүн'},
+      {id:'albadan_surgalt',l:'Албадан сургалтад хамрагдсан',u:'хүн'},
+    ]},
+    {t:'Өссөн дүнгээр',f:[
+      {id:'oss_niit',l:'Нийт холбогдогч',u:'хүн'},
+      {id:'oss_hyalbar_hun',l:'Хялбаршуулсан журмаар торгосон',u:'хүн'},
+      {id:'oss_hyalbar_dun',l:'Хялбаршуулсан торгуулийн дүн',u:'₮',s:'any'},
+      {id:'oss_shalgan_hun',l:'Зөрчил шалган шийдвэрлэх ажиллагаагаар торгосон',u:'хүн'},
+      {id:'oss_shalgan_dun',l:'Зөрчил шалган шийдвэрлэх торгуулийн дүн',u:'₮',s:'any'},
+      {id:'oss_hk_torguul_hun',l:'Хүүхдийн тэтгэлэгтэй холбоотой торгосон',u:'хүн'},
+      {id:'oss_hk_torguul_dun',l:'Хүүхдийн тэтгэлэгтэй торгуулийн дүн',u:'₮',s:'any'},
+      {id:'oss_barivch',l:'Баривчлах шийтгэл',u:'хүн'},
+    ]},
+  ],
+  bus_orgodol:[{t:'Өргөдөл, гомдол',f:[
+    {id:'khuleen_avsan',l:'Хүлээн авсан',u:'ш'},
+    {id:'shiydsersen',l:'Шийдвэрлэсэн',u:'ш'},
+    {id:'khyanagdaj',l:'Хянагдаж байгаа',u:'ш'},
+    {id:'undesleltei',l:'Үндэслэлтэй',u:'ш'},
+    {id:'undeslelnugui',l:'Үндэслэлгүй',u:'ш'},
+    {id:'uurg_yavuulsan',l:'Явуулсан үүрэг',u:'',ta:true},
+    {id:'arga_hemjee',l:'Арга хэмжээ тооцох санал',u:'',ta:true},
+  ]}],
+  negtle_bus:[{t:'Бүсийн нэгтгэл',f:[
+    {id:'negtle_tailbar',l:'Нэмэлт тайлбар',u:'',ta:true},
+  ]}],
+  tsakhim:[
+    {t:'Тээврийн хэрэгсэл',f:[
+      {id:'erh_tudgelj',l:'Захиран зарцуулах эрх түдгэлзүүлсэн',u:'ш'},
+      {id:'erh_sergeesen',l:'Эрхийг сэргээсэн',u:'ш'},
+    ]},
+    {t:'Цахим сан',f:[
+      {id:'zasvar_barimt',l:'Зөрүүтэй бүртгэлийг засварласан гүйцэтгэх баримт бичиг',u:'ш'},
+      {id:'eren_niit',l:'Эрэн сурвалжлагдаж байгаа нийт тоо',u:'хүн'},
+      {id:'khayag_togtos',l:'Оршин суух хаяг олж тогтоосон',u:'хүн'},
+    ]},
+  ],
+  hil:[{t:'Гадаадад зорчих эрх',f:[
+    {id:'hil_tudgelj',l:'Гадаадад зорчих эрх түдгэлзүүлсэн',u:'хүн'},
+    {id:'hil_sergeesen',l:'Гадаадад зорчих эрх сэргээсэн',u:'хүн'},
+    {id:'hil_barags_dun',l:'Барагдуулсан мөнгөн дүн',u:'₮',s:'any'},
+  ]}],
+  medee_too:[
+    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,
+     cats:['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'],
+     cols:[
+      {id:'bieluu_too',l:'Биелүүлбэл зохих тоо',u:'ш'},
+      {id:'bieluu_dun',l:'Биелүүлбэл зохих дүн',u:'₮'},
+      {id:'bodit_too',l:'Бодитой биелүүлсэн тоо',u:'ш'},
+      {id:'bodit_dun',l:'Бодитой биелүүлсэн дүн',u:'₮'},
+      {id:'uldegdel_too',l:'Үлдэгдэл тоо',u:'ш'},
+      {id:'uldegdel_dun',l:'Үлдэгдэл дүн',u:'₮'},
+      {id:'bodit_pct',l:'Бодит биелэлт',u:'%'},
+      {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
+     ]},
+    {t:'Нэмэлт мэдээлэл',f:[
+      {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
+      {id:'tetgleg_huukhed',l:'Тэтгэлэг авагч хүүхдийн нийт тоо',u:'хүүхэд'},
+      {id:'tetgleg_0_11',l:'0-11 насны хүүхэд',u:'хүүхэд'},
+      {id:'tetgleg_11plus',l:'11+ насны хүүхэд',u:'хүүхэд'},
+    ]},
+  ],
+  nekhemjlel:[
+    {t:'Тухайн 7 хоногт — хариуцагчаар татагдсан',f:[
+      {id:'niit_nekh',l:'Нийт нэхэмжлэл',u:'ш'},
+      {id:'toloч_ees',l:'Төлбөр төлөгчөөс',u:'ш'},
+      {id:'avagch_ees',l:'Төлбөр авагчаас',u:'ш'},
+      {id:'guravdagch',l:'Гуравдагч этгээдээс',u:'ш'},
+      {id:'etsesen',l:'Эцэслэн шийдвэрлэсэн',u:'ш'},
+      {id:'heregsekhgui',l:'— Хэрэгсэхгүй болгосон',u:'ш'},
+    ]},
+    {t:'Хяналтад байгаа нэхэмжлэл',f:[
+      {id:'hyan_duudlaga',l:'Дуудлага худалдаа хүчингүй болгох',u:'ш'},
+      {id:'hyan_unelgee',l:'Үнэлгээ хүчингүй болгох',u:'ш'},
+      {id:'hyan_hil',l:'Хилийн хоригтой холбоотой',u:'ш'},
+      {id:'hyan_busad',l:'Бусад асуудлаар',u:'ш'},
+      {id:'hyan_niit',l:'Нийт хяналтад байгаа',u:'ш'},
+    ]},
+    {t:'Өссөн дүнгээр',f:[
+      {id:'oss_niit_nekh',l:'Нийт нэхэмжлэл',u:'ш'},
+      {id:'oss_toloч',l:'Төлбөр төлөгчөөс',u:'ш'},
+      {id:'oss_avagch',l:'Төлбөр авагчаас',u:'ш'},
+      {id:'oss_gurav',l:'Гуравдагч этгээдээс',u:'ш'},
+      {id:'oss_etsesen',l:'Эцэслэн шийдвэрлэсэн',u:'ш'},
+    ]},
+  ],
+  lavlagaa_negtle:[{t:'Лавлагаа олгосон',f:[
+    {id:'lav_niit',l:'Нийт олгосон лавлагаа',u:'ш'},
+    {id:'lav_tsakhim',l:'Цахим шуудангаар ирсэн хүсэлт',u:'ш'},
+    {id:'lav_tulgaj',l:'Цахим сантай тулгаж хүргүүлсэн',u:'ш'},
+    {id:'lav_irgend',l:'Иргэнд цахимаас шалгаж хариу өгсөн',u:'ш'},
+    {id:'lav_tailbar',l:'Нэмэлт тайлбар',u:'',ta:true},
+  ]}],
+  orgodol_central:[
+    {t:'Тухайн 7 хоногт',f:[
+      {id:'org_irsen_niit',l:'Нийт ирсэн өргөдөл, гомдол',u:'ш'},
+      {id:'org_shiyds_tot',l:'Шийдвэрлэж хариу өгсөн нийт',u:'ш'},
+      {id:'org_shiyds_tolot',l:'— Төлбөр төлөгчөөс',u:'ш'},
+      {id:'org_shiyds_avagch',l:'— Төлбөр авагчаас',u:'ш'},
+      {id:'org_khyanagdaj',l:'Хянагдаж байгаа',u:'ш'},
+      {id:'org_tatan',l:'Татан хянасан гүйцэтгэх баримт бичиг',u:'ш'},
+    ]},
+    {t:'ШШГЕГ-т хандсан',f:[
+      {id:'shsgeg_avagch',l:'Төлбөр авагчаас',u:'ш'},
+      {id:'shsgeg_toloч',l:'Төлбөр төлөгчөөс',u:'ш'},
+      {id:'shsgeg_unds_nugui',l:'Үндэслэлгүй',u:'ш'},
+    ]},
+    {t:'Шийдвэр гүйцэтгэх алба',f:[
+      {id:'sga_avagch',l:'Төлбөр авагчаас',u:'ш'},
+      {id:'sga_toloч',l:'Төлбөр төлөгчөөс',u:'ш'},
+      {id:'sga_undsleltei',l:'Үндэслэлтэй',u:'ш'},
+      {id:'sga_unds_nugui',l:'Үндэслэлгүй',u:'ш'},
+    ]},
+    {t:'11-11 төв',f:[
+      {id:'g11_avagch',l:'Төлбөр авагчаас',u:'ш'},
+      {id:'g11_toloч',l:'Төлбөр төлөгчөөс',u:'ш'},
+      {id:'g11_undsleltei',l:'Үндэслэлтэй',u:'ш'},
+      {id:'g11_unds_nugui',l:'Үндэслэлгүй',u:'ш'},
+    ]},
+    {t:'Даалгавар, шилжүүлэлт',f:[
+      {id:'daalgavar_hurgulsan',l:'Гүйцэтгүүлэхээр хүргүүлсэн даалгавар',u:'ш'},
+      {id:'daalgavar_guitset',l:'Гүйцэтгэсэн даалгавар',u:'ш'},
+      {id:'shiljuulsen',l:'Шилжүүлсэн гүйцэтгэх баримт бичиг',u:'ш'},
+    ]},
+  ],
+  dotood_ajil:[],
+  surgalt:[],
+  negtle_main:[],
+  head:[],
+};
+
+// Initial users to seed
+const INIT_USERS = [
+  {name:'Х.Оюунболд',rank:'х/а',department:'dotood_khyanalt',role:'head'},
+  {name:'Н.Нямжаргал',rank:'д/х',department:'dotood_khyanalt',role:'zorchil'},
+  {name:'Д.Баасансүрэн',rank:'д/х',department:'dotood_khyanalt',role:'neg_tseg'},
+  {name:'Э.Цэнгүүнзул',rank:'д/х',department:'dotood_khyanalt',role:'neg_tseg'},
+  {name:'М.Нарантунгалаг',rank:'х/ч',department:'dotood_khyanalt',role:'neg_tseg'},
+  {name:'А.Зая',rank:'д/х',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'Б.Даваадорж',rank:'д/х',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'М.Үүлэнсолонго',rank:'д/х',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'Э.Батхишиг',rank:'х/ч',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'М.Золбоо',rank:'х/ч',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'М.Эрдэнэбаяр',rank:'х/ч',department:'dotood_khyanalt',role:'bus_orgodol'},
+  {name:'Г.Алтансувд',rank:'х/ч',department:'dotood_khyanalt',role:'negtle_bus'},
+  {name:'Г.Азжаргал',rank:'х/ч',department:'tsakhim_burtgel',role:'head'},
+  {name:'Г.Жигжид',rank:'д/х',department:'tsakhim_burtgel',role:'tsakhim'},
+  {name:'Д.Гантулга',rank:'д/х',department:'tsakhim_burtgel',role:'tsakhim'},
+  {name:'Б.Золзаяа',rank:'д/х',department:'tsakhim_burtgel',role:'hil'},
+  {name:'Э.Ганчимэг',rank:'а/х',department:'tsakhim_burtgel',role:'medee_too'},
+  {name:'Ц.Үдвал',rank:'х/ч',department:'tsakhim_burtgel',role:'nekhemjlel'},
+  {name:'З.Номин-Эрдэнэ',rank:'а/д',department:'tsakhim_burtgel',role:'lavlagaa_negtle'},
+  {name:'Э.Алтанцэцэг',rank:'д/х',department:'tolovlolt',role:'head'},
+  {name:'Θ.Саруултуяа',rank:'д/х',department:'tolovlolt',role:'surgalt'},
+  {name:'Д.Намуун',rank:'х/ч',department:'tolovlolt',role:'dotood_ajil'},
+  {name:'М.Март',rank:'х/ч',department:'tolovlolt',role:'dotood_ajil'},
+  {name:'Б.Золжаргал',rank:'а/х',department:'tolovlolt',role:'negtle_main'},
+  {name:'Ч.Элбэг',rank:'д/х',department:'tolovlolt',role:'orgodol_central'},
+];
+
+// ── Helpers ────────────────────────────────────────────
+function weekDates(offset=0){
+  const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1 + offset*7);
+  const mon = new Date(d);
+  const sun = new Date(d); sun.setDate(sun.getDate()+6);
+  const fmt = x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+  return {start:fmt(mon), end:fmt(sun)};
+}
+function fmtWeek(start,end){
+  return `${start.replace(/-/g,'.')} – ${end.slice(5).replace('-','.')}`;
+}
+function toast(msg,ok=true){
+  const w=document.getElementById('toast-wrap');
+  const el=document.createElement('div');
+  el.className=`alert alert-${ok?'success':'danger'} py-2 px-3 shadow`;
+  el.style.cssText='min-width:260px;font-size:.9rem';
+  el.textContent=msg;
+  w.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+function catKey(cat){return cat.replace(/[\s,]/g,'_').toLowerCase();}
+
+// ── App state ─────────────────────────────────────────
+let currentUser=null, currentWeek=null, allUsers=[], allReports={};
+window.showView=showView;
+window.submitReport=submitReport;
+window.adminAddUser=adminAddUser;
+window.loadConsolidated=loadConsolidated;
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name==='consolidated') loadConsolidated();
+  if(name==='admin') renderAdmin();
+}
+
+// ── Seed users ─────────────────────────────────────────
+async function seedUsers(){
+  const snap = await getDocs(collection(db,'users'));
+  if(snap.size>0) return;
+  for(let i=0;i<INIT_USERS.length;i++){
+    const u=INIT_USERS[i];
+    await setDoc(doc(db,'users',String(i+1)),{...u,isActive:true,createdAt:serverTimestamp()});
+  }
+}
+
+// ── Load users ─────────────────────────────────────────
+async function loadUsers(){
+  const snap=await getDocs(query(collection(db,'users'),orderBy('__name__')));
+  allUsers=[];
+  snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
+  return allUsers;
+}
+
+// ── Current week reports ───────────────────────────────
+async function loadWeekReports(weekStart){
+  const snap=await getDocs(query(collection(db,'reports'),where('weekStart','==',weekStart)));
+  allReports={};
+  snap.forEach(d=>{const r=d.data(); allReports[r.userId]=r;});
+}
+
+// ── Render home ────────────────────────────────────────
+async function renderHome(){
+  const w=weekDates(); currentWeek=w;
+  document.getElementById('home-week-label').textContent=fmtWeek(w.start,w.end);
+  document.getElementById('home-week-dates').textContent=`${w.start} — ${w.end}`;
+  await loadUsers();
+  await loadWeekReports(w.start);
+  const el=document.getElementById('home-users-list');
+  let html='<p class="text-muted mb-3">Нэрээ сонгоно уу:</p>';
+  for(const dk of DEPT_ORDER){
+    const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
+    if(!dus.length) continue;
+    html+=`<div class="sec-head">${DEPT_NAMES[dk]}</div><div class="row g-2 mb-2">`;
+    for(const u of dus){
+      const done=!!allReports[u.id];
+      html+=`<div class="col-md-6"><div class="user-card" onclick="selectUser('${u.id}')">
+        <div class="avatar">${u.name[0]}</div>
+        <div class="flex-grow-1">
+          <div class="fw-semibold">${u.rank} ${u.name}</div>
+          <div class="text-muted" style="font-size:.78rem">${ROLE_LABELS[u.role]||u.role}</div>
+        </div>
+        ${done?'<span class="badge bg-success"><i class="bi bi-check"></i> Илгээсэн</span>':'<span class="badge bg-light text-muted">Хүлээгдэж байна</span>'}
+      </div></div>`;
+    }
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+window.selectUser=function(uid){
+  currentUser=allUsers.find(u=>u.id===uid);
+  if(!currentUser) return;
+  renderReportForm();
+  showView('report');
+};
+
+// ── Render report form ─────────────────────────────────
+function renderReportForm(){
+  if(!currentUser||!currentWeek) return;
+  const u=currentUser;
+  document.getElementById('report-title').innerHTML=
+    `<i class="bi bi-pencil-square me-2"></i>${u.rank} ${u.name}
+     <span class="badge ms-2" style="background:rgba(255,255,255,.2);font-size:.72rem">${ROLE_LABELS[u.role]||u.role}</span>`;
+  document.getElementById('report-week-label').textContent=fmtWeek(currentWeek.start,currentWeek.end);
+
+  // Load existing data
+  const ex=allReports[u.id]||{};
+  const d=ex.data||{};
+
+  // Submitted info
+  const si=document.getElementById('report-submitted-info');
+  si.innerHTML=ex.submittedAt
+    ? `<div class="alert alert-success py-2 mb-3"><i class="bi bi-check-circle me-1"></i>
+       Хадгалсан: ${ex.submittedAt?.toDate?.()?.toLocaleString('mn-MN')||ex.submittedAt}</div>` : '';
+
+  // Build form fields
+  const secs=ROLE_FORMS[u.role]||[];
+  let html='';
+  if(u.role==='head'){
+    html='<div class="alert alert-info"><i class="bi bi-eye me-2"></i>Та зөвхөн хяналт тавих эрхтэй. <a href="#" onclick="showView(\'consolidated\')">Нэгтгэл харах →</a></div>';
+  } else {
+    for(const sec of secs){
+      html+=`<div class="sec-head">${sec.t}</div>`;
+      if(sec.note) html+=`<p class="text-muted small">${sec.note}</p>`;
+      if(sec.table){
+        html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
+          <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:95px">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
+        for(const cat of sec.cats){
+          const ck='tbl_'+catKey(cat)+'__';
+          html+=`<tr><td class="fw-semibold small">${cat}</td>`;
+          for(const col of sec.cols){
+            const fid=ck+col.id;
+            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}" step="any" min="0" value="${d[fid]||''}"></td>`;
+          }
+          html+='</tr>';
+        }
+        html+='</tbody></table></div>';
+      } else {
+        html+='<div class="row g-3 mb-1">';
+        for(const f of sec.f){
+          if(f.ta){
+            html+=`<div class="col-12"><label class="form-label fw-semibold">${f.l}</label>
+              <textarea class="form-control" name="${f.id}" rows="2">${d[f.id]||''}</textarea></div>`;
+          } else {
+            html+=`<div class="col-md-6 col-lg-4">
+              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
+              <input type="number" class="form-control" name="${f.id}" step="${f.s||'1'}" min="0" value="${d[f.id]||''}">
+            </div>`;
+          }
+        }
+        html+='</div>';
+      }
+    }
+  }
+  document.getElementById('report-fields').innerHTML=html;
+
+  // Fill general fields
+  document.getElementById('f-hiiseh').value=d.hiiseh_ajil||'';
+  document.getElementById('f-hiikh').value=d.hiikh_ajil||'';
+  document.getElementById('f-temdeg').value=d.temdegleltar||'';
+}
+
+// ── Submit report ───────────────────────────────────────
+async function submitReport(e){
+  e.preventDefault();
+  if(!currentUser||!currentWeek) return;
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Хадгалж байна...';
+  try{
+    const fd=new FormData(document.getElementById('report-form'));
+    const data={};
+    fd.forEach((v,k)=>{if(v.trim()) data[k]=v.trim();});
+    const reportId=`${currentWeek.start}_${currentUser.id}`;
+    await setDoc(doc(db,'reports',reportId),{
+      userId:currentUser.id, userName:currentUser.name, rank:currentUser.rank,
+      department:currentUser.department, role:currentUser.role,
+      weekStart:currentWeek.start, weekEnd:currentWeek.end,
+      data, submittedAt:new Date().toLocaleString('mn-MN'), updatedAt:serverTimestamp()
+    });
+    allReports[currentUser.id]={userId:currentUser.id,data,submittedAt:new Date().toLocaleString('mn-MN')};
+    toast('✓ Тайлан хадгалагдлаа');
+    renderReportForm();
+  } catch(err){ toast('Алдаа гарлаа: '+err.message, false); }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy me-1"></i>Хадгалах';
+}
+
+// ── Consolidated ────────────────────────────────────────
+async function loadConsolidated(){
+  const sel=document.getElementById('week-selector');
+  // Populate last 8 weeks
+  if(!sel.options.length){
+    for(let i=0;i>=–7;i--){
+      const w=weekDates(i);
+      const opt=document.createElement('option');
+      opt.value=w.start; opt.textContent=fmtWeek(w.start,w.end);
+      if(i===0) opt.selected=true;
+      sel.appendChild(opt);
+    }
+  }
+  const selWeek=sel.value||weekDates().start;
+  const selWeekEnd=sel.options[sel.selectedIndex]?.textContent?.split('–')[1]?.trim()||'';
+  document.getElementById('cons-week-label').textContent=sel.options[sel.selectedIndex]?.textContent||'';
+  const body=document.getElementById('cons-body');
+  body.innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
+
+  await loadUsers();
+  const snap=await getDocs(query(collection(db,'reports'),where('weekStart','==',selWeek)));
+  const reps={};
+  snap.forEach(d=>{const r=d.data(); reps[r.userId]=r;});
+
+  let html='<h6 class="fw-bold mb-3">Бөглөлтийн байдал</h6>';
+  for(const dk of DEPT_ORDER){
+    const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
+    if(!dus.length) continue;
+    html+=`<div class="mb-3"><div class="sec-head">${DEPT_NAMES[dk]}</div><div class="d-flex flex-wrap gap-2">`;
+    for(const u of dus){
+      const done=!!reps[u.id];
+      html+=`<span class="badge ${done?'bg-success':'bg-danger'}">${u.rank} ${u.name} <i class="bi ${done?'bi-check':'bi-clock'}"></i></span>`;
+    }
+    html+='</div></div>';
+  }
+  html+='<hr>';
+
+  for(const dk of DEPT_ORDER){
+    const dReps=Object.values(reps).filter(r=>r.department===dk);
+    if(!dReps.length) continue;
+    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}</h5>`;
+    for(const r of dReps){
+      const d=r.data||{};
+      html+=`<div class="card mb-3"><div class="card-header py-2 d-flex justify-content-between" style="background:#f0f4ff;color:var(--brand)">
+        <span class="fw-semibold">${r.rank} ${r.userName}
+          <span class="badge ms-1" style="background:var(--brand);font-size:.7rem">${ROLE_LABELS[r.role]||r.role}</span></span>
+        <span class="text-muted small">${r.submittedAt||''}</span>
+      </div><div class="card-body py-2 px-3 small">`;
+
+      // Role summary
+      html+=renderRoleSummary(r.role,d);
+
+      if(d.hiiseh_ajil) html+=`<div class="mt-2"><strong>Хийсэн ажил:</strong><div class="ps-2 text-secondary" style="white-space:pre-wrap">${d.hiiseh_ajil}</div></div>`;
+      if(d.hiikh_ajil) html+=`<div class="mt-1"><strong>Хийх ажил:</strong><div class="ps-2 text-secondary" style="white-space:pre-wrap">${d.hiikh_ajil}</div></div>`;
+      html+='</div></div>';
+    }
+  }
+  body.innerHTML=html;
+}
+
+function badge(label,val,cls='bg-secondary'){
+  return `<span class="badge ${cls} me-1">${label}</span> <strong>${val||'—'}</strong> `;
+}
+function renderRoleSummary(role,d){
+  let h='<div class="d-flex flex-wrap gap-1 align-items-center mb-1">';
+  if(role==='neg_tseg'){
+    h+=badge('Нийт',d.niit_irsen)+badge('Шийдвэр гүйцэтгэл',d.shdg_guitsetgel)+badge('Бусад',d.busad_asuudlaar)+badge('Холбосон',d.holbon_shiydsersen)+badge('Лавлагаа',d.lavlagaa_olgos);
+  } else if(role==='zorchil'){
+    h+=badge('Гомдол',d.gomDol_too)+badge('Торгуулийн хүн',d.torguul_hun)+badge('Торгуулийн дүн',d.torguul_dun,'bg-dark')+badge('Баривч',d.barivch_hun);
+    h+=`</div><div class="d-flex flex-wrap gap-1 mt-1">`;
+    h+=badge('Өссөн нийт',d.oss_niit,'bg-dark')+badge('Хялбаршуулсан',d.oss_hyalbar_hun,'bg-dark')+badge('Хүүхдийн тэтгэлэг',d.oss_hk_torguul_hun,'bg-dark');
+  } else if(role==='bus_orgodol'){
+    h+=badge('Авсан',d.khuleen_avsan)+badge('Шийдвэрлэсэн',d.shiydsersen,'bg-success')+badge('Хянагдаж байгаа',d.khyanagdaj,'bg-warning text-dark')+badge('Үндэслэлтэй',d.undesleltei,'bg-success')+badge('Үндэслэлгүй',d.undeslelnugui,'bg-danger');
+  } else if(role==='tsakhim'){
+    h+=badge('Эрх түдгэлз.',d.erh_tudgelj)+badge('Эрх сэргээсэн',d.erh_sergeesen)+badge('Засварласан',d.zasvar_barimt)+badge('Эрэн сурвалж.',d.eren_niit)+badge('Хаяг тогтоосон',d.khayag_togtos);
+  } else if(role==='hil'){
+    h+=badge('Түдгэлзүүлсэн',d.hil_tudgelj)+badge('Сэргээсэн',d.hil_sergeesen)+badge('Барагдуулсан дүн',d.hil_barags_dun,'bg-dark');
+  } else if(role==='medee_too'){
+    const cats=['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'];
+    h+='</div><div class="table-responsive"><table class="table table-sm table-bordered mb-1"><thead><tr><th>Ангилал</th><th>Биелүүлбэл зохих</th><th>Бодитой биелүүлсэн</th><th>Бодит%</th><th>Мөнгөн%</th></tr></thead><tbody>';
+    for(const cat of cats){
+      const ck='tbl_'+catKey(cat)+'__';
+      h+=`<tr><td>${cat}</td><td>${d[ck+'bieluu_too']||'—'} ш/${d[ck+'bieluu_dun']||'—'}</td><td>${d[ck+'bodit_too']||'—'} ш/${d[ck+'bodit_dun']||'—'}</td><td>${d[ck+'bodit_pct']||'—'}%</td><td>${d[ck+'mongon_pct']||'—'}%</td></tr>`;
+    }
+    h+='</tbody></table>';
+    h+=badge('Шинэ баримт',d.shine_barimt)+badge('Хүүхэд нийт',d.tetgleg_huukhed);
+    return h+'</div>';
+  } else if(role==='nekhemjlel'){
+    h+=badge('Нийт нэхэмжлэл',d.niit_nekh)+badge('Эцэслэсэн',d.etsesen)+badge('Хяналтад нийт',d.hyan_niit,'bg-dark')+badge('Дуудлага худалдаа',d.hyan_duudlaga,'bg-dark')+badge('Үнэлгээ',d.hyan_unelgee,'bg-dark');
+  } else if(role==='lavlagaa_negtle'){
+    h+=badge('Нийт лавлагаа',d.lav_niit)+badge('Цахим шуудан',d.lav_tsakhim)+badge('Тулгасан',d.lav_tulgaj)+badge('Иргэнд хариу',d.lav_irgend);
+  } else if(role==='orgodol_central'){
+    h+=badge('Нийт ирсэн',d.org_irsen_niit)+badge('Шийдвэрлэсэн',d.org_shiyds_tot,'bg-success')+badge('Хянагдаж байгаа',d.org_khyanagdaj,'bg-warning text-dark');
+  }
+  return h+'</div>';
+}
+
+// ── Admin ───────────────────────────────────────────────
+async function renderAdmin(){
+  await loadUsers();
+  // Populate role select
+  const rs=document.getElementById('a-role');
+  if(!rs.options.length){
+    for(const[k,v] of Object.entries(ROLE_LABELS)){
+      const o=document.createElement('option'); o.value=k; o.textContent=v; rs.appendChild(o);
+    }
+  }
+  const tb=document.getElementById('admin-users-table');
+  let html='';
+  for(const u of allUsers){
+    const roleOpts=Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('');
+    html+=`<tr class="${u.isActive?'':'table-light text-muted'}">
+      <td>${u.id}</td>
+      <td>${u.rank} <strong>${u.name}</strong></td>
+      <td><small>${DEPT_NAMES[u.department]||u.department}</small></td>
+      <td><span class="badge bg-secondary">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td><button class="btn btn-sm ${u.isActive?'btn-outline-danger':'btn-outline-success'}"
+          onclick="toggleUser('${u.id}',${u.isActive})">${u.isActive?'Идэвхгүй болгох':'Идэвхжүүлэх'}</button></td>
+      <td><form onsubmit="changeRole(event,'${u.id}')" class="d-flex gap-1">
+        <select name="role" class="form-select form-select-sm" style="width:auto">${roleOpts}</select>
+        <button type="submit" class="btn btn-sm btn-outline-primary">✓</button>
+      </form></td>
+    </tr>`;
+  }
+  tb.innerHTML=html;
+}
+window.toggleUser=async function(uid,cur){
+  await updateDoc(doc(db,'users',uid),{isActive:!cur});
+  toast(cur?'Идэвхгүй болголоо':'Идэвхжүүллээ'); renderAdmin();
+};
+window.changeRole=async function(e,uid){
+  e.preventDefault();
+  const role=new FormData(e.target).get('role');
+  await updateDoc(doc(db,'users',uid),{role});
+  toast('Үүрэг шинэчлэгдлээ'); renderAdmin();
+};
+async function adminAddUser(e){
+  e.preventDefault();
+  const name=document.getElementById('a-name').value.trim();
+  const rank=document.getElementById('a-rank').value.trim();
+  const dept=document.getElementById('a-dept').value;
+  const role=document.getElementById('a-role').value;
+  const newId=String(Date.now());
+  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,createdAt:serverTimestamp()});
+  toast(`✓ ${name} нэмэгдлээ`);
+  e.target.reset(); renderAdmin();
+}
+
+// ── Init ────────────────────────────────────────────────
+(async()=>{
+  try{
+    await seedUsers();
+    await renderHome();
+  } catch(err){
+    document.getElementById('home-users-list').innerHTML=
+      `<div class="alert alert-danger"><strong>Firebase холболт амжилтгүй:</strong><br>${err.message}<br><small>firebaseConfig-г зөв оруулсан эсэхийг шалгана уу.</small></div>`;
+  }
+})();
+</script>
+</body>
+</html>
