@@ -898,17 +898,9 @@ window.adminAddUser=async function(e){
   await loadUsers(true); renderAdmin(); populateLoginSelect();
 };
 
-function toast(msg,ok=true){
-  const d=document.createElement('div');
-  d.className=`alert alert-${ok?'success':'danger'} py-2 px-3 shadow`;
-  d.style.cssText='min-width:200px;font-size:.87rem';
-  d.textContent=msg;
-  document.getElementById('toast-wrap').appendChild(d);
-  setTimeout(()=>d.remove(),3000);
-}
-
 // ── Startup ─────────────────────────────────────────────
 seedUsers().then(()=>populateLoginSelect());
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                      
