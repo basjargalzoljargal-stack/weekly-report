@@ -492,6 +492,10 @@ window.showAdminLogin=showAdminLogin;
 window.doLogin=doLogin;
 window.doAdminLogin=doAdminLogin;
 window.doLogout=doLogout;
+window.changeRole=changeRole;
+window.changePass=changePass;
+window.toggleActive=toggleActive;
+window.changeAdminPass=changeAdminPass;
 
 // ── Login ──────────────────────────────────────────────
 async function populateLoginSelect(){
@@ -856,33 +860,33 @@ async function renderAdmin(){
   document.getElementById('admin-users-table').innerHTML=html;
 }
 
-window.changeRole=async function(uid,newRole){
+async function changeRole(uid,newRole){
   await updateDoc(doc(db,'users',uid),{role:newRole});
   const u=allUsers.find(x=>x.id===uid); if(u) u.role=newRole;
   toast('Үүрэг өөрчлөгдлөө ✓');
-};
-window.changePass=async function(uid){
+}
+async function changePass(uid){
   const inp=document.getElementById('pass-'+uid);
   const np=inp.value.trim(); if(!np){toast('Нууц үг хоосон',false);return;}
   await updateDoc(doc(db,'users',uid),{password:np});
   const u=allUsers.find(x=>x.id===uid); if(u) u.password=np;
   inp.value=''; inp.placeholder=np;
   toast('Нууц үг солигдлоо ✓');
-};
-window.toggleActive=async function(uid,active){
+}
+async function toggleActive(uid,active){
   await updateDoc(doc(db,'users',uid),{isActive:active});
   const u=allUsers.find(x=>x.id===uid); if(u) u.isActive=active;
   renderAdmin(); populateLoginSelect();
   toast(active?'Идэвхжүүллээ ✓':'Хаалаа ✓');
-};
-window.changeAdminPass=async function(e){
+}
+async function changeAdminPass(e){
   e.preventDefault();
   const inp=document.getElementById('new-admin-pass');
   const np=inp.value.trim(); if(!np) return;
   await setDoc(doc(db,'settings','admin'),{password:np});
   inp.value=''; toast('Admin нууц үг солигдлоо ✓');
-};
-window.adminAddUser=async function(e){
+}
+async function adminAddUser(e){
   e.preventDefault();
   const rank=document.getElementById('a-rank').value.trim();
   const name=document.getElementById('a-name').value.trim();
@@ -896,11 +900,11 @@ window.adminAddUser=async function(e){
   ['a-rank','a-name','a-pass'].forEach(id=>{document.getElementById(id).value='';});
   toast(`${rank} ${name} нэмэгдлээ ✓`);
   await loadUsers(true); renderAdmin(); populateLoginSelect();
-};
+}
 
 // ── Startup ─────────────────────────────────────────────
 seedUsers().then(()=>populateLoginSelect());
 </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                        
