@@ -25,17 +25,78 @@ input[type=number]{max-width:170px}
 .view{display:none}.view.active{display:block}
 .spinner-wrap{display:flex;align-items:center;justify-content:center;min-height:200px}
 .tbl-input{width:110px;font-size:.82rem;padding:3px 6px}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0f2f5}
+.login-card{width:100%;max-width:400px;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.13)}
+.login-header{background:var(--brand);color:#fff;border-radius:14px 14px 0 0;padding:28px 24px 20px;text-align:center}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="login-page" class="login-wrap">
+  <div class="login-card">
+    <div class="login-header">
+      <i class="bi bi-journal-text" style="font-size:2rem"></i>
+      <h5 class="mt-2 mb-0 fw-bold">7 Хоногийн Тайлан</h5>
+      <div style="font-size:.8rem;opacity:.8">Шийдвэр гүйцэтгэх алба</div>
+    </div>
+    <div class="p-4">
+      <form onsubmit="doLogin(event)">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Нэр сонгох</label>
+          <select class="form-select" id="login-user" required>
+            <option value="">-- Нэрээ сонгоно уу --</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Нууц үг</label>
+          <input type="password" class="form-control" id="login-pass" required placeholder="Нууц үгээ оруулна уу">
+        </div>
+        <div id="login-err" class="text-danger small mb-2" style="display:none">Нэр эсвэл нууц үг буруу байна.</div>
+        <button type="submit" class="btn w-100 py-2 fw-semibold" style="background:var(--brand);color:#fff" id="login-btn">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Нэвтрэх
+        </button>
+      </form>
+      <hr>
+      <button class="btn btn-outline-secondary btn-sm w-100" onclick="showAdminLogin()">
+        <i class="bi bi-shield-lock me-1"></i>Admin нэвтрэх
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal fade" id="adminLoginModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--brand);color:#fff">
+        <h6 class="modal-title"><i class="bi bi-shield-lock me-2"></i>Admin нэвтрэх</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="doAdminLogin(event)">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Admin нууц үг</label>
+            <input type="password" class="form-control" id="admin-pass-input" placeholder="Нууц үг">
+          </div>
+          <div id="admin-login-err" class="text-danger small mb-2" style="display:none">Нууц үг буруу.</div>
+          <button type="submit" class="btn w-100" style="background:var(--brand);color:#fff">Нэвтрэх</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main-app" style="display:none">
 <nav class="navbar navbar-dark navbar-expand-lg mb-3">
   <div class="container-fluid">
     <span class="navbar-brand"><i class="bi bi-journal-text me-2"></i>7 Хоногийн Тайлан</span>
-    <div class="d-flex gap-2 ms-auto flex-wrap">
+    <div class="d-flex gap-2 ms-auto flex-wrap align-items-center">
+      <span class="text-white-50 small" id="nav-username"></span>
       <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-house me-1"></i>Нүүр</button>
       <button class="btn btn-sm btn-outline-light" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</button>
-      <button class="btn btn-sm btn-outline-light" onclick="showView('admin')"><i class="bi bi-gear me-1"></i>Admin</button>
+      <button class="btn btn-sm btn-outline-light d-none" id="nav-admin-btn" onclick="showView('admin')"><i class="bi bi-gear me-1"></i>Admin</button>
+      <button class="btn btn-sm btn-outline-warning" onclick="doLogout()"><i class="bi bi-box-arrow-right me-1"></i>Гарах</button>
     </div>
   </div>
 </nav>
@@ -133,20 +194,32 @@ input[type=number]{max-width:170px}
      <form onsubmit="adminAddUser(event)" class="row g-3 align-items-end">
       <div class="col-md-2"><label class="form-label">Цол</label>
        <input type="text" id="a-rank" class="form-control" placeholder="д/х"></div>
-      <div class="col-md-3"><label class="form-label">Нэр *</label>
+      <div class="col-md-2"><label class="form-label">Нэр *</label>
        <input type="text" id="a-name" class="form-control" required placeholder="О.Нэр"></div>
-      <div class="col-md-3"><label class="form-label">Хэлтэс *</label>
+      <div class="col-md-2"><label class="form-label">Хэлтэс *</label>
        <select id="a-dept" class="form-select" required>
         <option value="dotood_khyanalt">Дотоод хяналтын хэлтэс</option>
         <option value="tsakhim_burtgel">Цахим бүртгэл, дүн шинжилгээний хэлтэс</option>
         <option value="tolovlolt">Төлөвлөлт, дотоод ажлын хэлтэс</option>
        </select></div>
-      <div class="col-md-3"><label class="form-label">Үүрэг *</label>
-       <select id="a-role" class="form-select" required id="a-role"></select></div>
-      <div class="col-md-1">
-       <button type="submit" class="btn w-100" style="background:var(--brand);color:#fff"><i class="bi bi-plus-lg"></i></button>
+      <div class="col-md-2"><label class="form-label">Үүрэг *</label>
+       <select id="a-role" class="form-select" required></select></div>
+      <div class="col-md-2"><label class="form-label">Нууц үг</label>
+       <input type="text" id="a-pass" class="form-control" placeholder="1234 (анхны)"></div>
+      <div class="col-md-2">
+       <label class="form-label">&nbsp;</label>
+       <button type="submit" class="btn w-100 d-block" style="background:var(--brand);color:#fff"><i class="bi bi-plus-lg"></i> Нэмэх</button>
       </div>
      </form>
+     <hr>
+     <div class="row g-2 align-items-end">
+      <div class="col-md-4"><label class="form-label fw-semibold">Admin нууц үг солих</label>
+       <form onsubmit="changeAdminPass(event)" class="d-flex gap-2">
+        <input type="password" id="new-admin-pass" class="form-control" placeholder="Шинэ нууц үг" required>
+        <button type="submit" class="btn btn-outline-danger">Солих</button>
+       </form>
+      </div>
+     </div>
     </div>
    </div>
    <div class="card">
@@ -154,7 +227,7 @@ input[type=number]{max-width:170px}
     <div class="card-body p-0">
      <div class="table-responsive">
       <table class="table table-hover mb-0 align-middle">
-       <thead><tr><th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Үүрэг солих</th></tr></thead>
+       <thead><tr><th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Үүрэг солих</th><th>Нууц үг солих</th></tr></thead>
        <tbody id="admin-users-table"></tbody>
       </table>
      </div>
@@ -164,6 +237,7 @@ input[type=number]{max-width:170px}
 </div>
 
 </div><!-- /container -->
+</div><!-- /main-app -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
@@ -407,10 +481,90 @@ function catKey(cat){return cat.replace(/[\s,]/g,'_').toLowerCase();}
 
 // ── App state ─────────────────────────────────────────
 let currentUser=null, currentWeek=null, allUsers=[], allReports={};
+let loggedInUser=null, isAdmin=false;
+const ADMIN_DEFAULT_PASS='admin2026';
+
 window.showView=showView;
 window.submitReport=submitReport;
 window.adminAddUser=adminAddUser;
 window.loadConsolidated=loadConsolidated;
+window.showAdminLogin=showAdminLogin;
+window.doLogin=doLogin;
+window.doAdminLogin=doAdminLogin;
+window.doLogout=doLogout;
+
+// ── Login ──────────────────────────────────────────────
+async function populateLoginSelect(){
+  const sel=document.getElementById('login-user');
+  sel.innerHTML='<option value="">-- Нэрээ сонгоно уу --</option>';
+  await loadUsers();
+  for(const u of allUsers.filter(u=>u.isActive)){
+    const opt=document.createElement('option');
+    opt.value=u.id; opt.textContent=`${u.rank} ${u.name}`;
+    sel.appendChild(opt);
+  }
+}
+
+async function doLogin(e){
+  e.preventDefault();
+  const uid=document.getElementById('login-user').value;
+  const pass=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-err');
+  const btn=document.getElementById('login-btn');
+  err.style.display='none';
+  btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Шалгаж байна...';
+  try{
+    const u=allUsers.find(x=>x.id===uid);
+    if(!u){ err.style.display='block'; btn.disabled=false; btn.innerHTML='<i class="bi bi-box-arrow-in-right me-1"></i>Нэвтрэх'; return; }
+    const storedPass = u.password || '1234';
+    if(pass !== storedPass){
+      err.style.display='block';
+      btn.disabled=false; btn.innerHTML='<i class="bi bi-box-arrow-in-right me-1"></i>Нэвтрэх'; return;
+    }
+    loggedInUser=u; isAdmin=false;
+    enterApp();
+  }catch(ex){ toast('Алдаа: '+ex.message,false); }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-box-arrow-in-right me-1"></i>Нэвтрэх';
+}
+
+function showAdminLogin(){
+  const m=new bootstrap.Modal(document.getElementById('adminLoginModal'));
+  m.show();
+}
+
+async function doAdminLogin(e){
+  e.preventDefault();
+  const pass=document.getElementById('admin-pass-input').value;
+  const err=document.getElementById('admin-login-err');
+  err.style.display='none';
+  // Check admin password from Firestore settings
+  const settingsDoc=await getDoc(doc(db,'settings','admin'));
+  const adminPass=settingsDoc.exists()?settingsDoc.data().password:ADMIN_DEFAULT_PASS;
+  if(pass!==adminPass){ err.style.display='block'; return; }
+  isAdmin=true; loggedInUser={id:'admin',name:'Admin',rank:'',role:'admin'};
+  bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'))?.hide();
+  enterApp();
+}
+
+function enterApp(){
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  document.getElementById('nav-username').textContent=loggedInUser.rank+' '+loggedInUser.name;
+  if(isAdmin) document.getElementById('nav-admin-btn').classList.remove('d-none');
+  else document.getElementById('nav-admin-btn').classList.add('d-none');
+  if(isAdmin){ showView('admin'); return; }
+  currentUser=loggedInUser;
+  renderReportForm();
+  showView('report');
+}
+
+function doLogout(){
+  loggedInUser=null; isAdmin=false; currentUser=null;
+  document.getElementById('login-page').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+}
 
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -425,8 +579,10 @@ async function seedUsers(){
   if(snap.size>0) return;
   for(let i=0;i<INIT_USERS.length;i++){
     const u=INIT_USERS[i];
-    await setDoc(doc(db,'users',String(i+1)),{...u,isActive:true,createdAt:serverTimestamp()});
+    await setDoc(doc(db,'users',String(i+1)),{...u,isActive:true,password:'1234',createdAt:serverTimestamp()});
   }
+  // Set default admin password
+  await setDoc(doc(db,'settings','admin'),{password:ADMIN_DEFAULT_PASS});
 }
 
 // ── Load users ─────────────────────────────────────────
@@ -691,6 +847,10 @@ async function renderAdmin(){
         <select name="role" class="form-select form-select-sm" style="width:auto">${roleOpts}</select>
         <button type="submit" class="btn btn-sm btn-outline-primary">✓</button>
       </form></td>
+      <td><form onsubmit="changePass(event,'${u.id}')" class="d-flex gap-1">
+        <input type="text" name="pass" class="form-control form-control-sm" style="width:110px" placeholder="Шинэ нууц үг">
+        <button type="submit" class="btn btn-sm btn-outline-warning">✓</button>
+      </form></td>
     </tr>`;
   }
   tb.innerHTML=html;
@@ -705,29 +865,43 @@ window.changeRole=async function(e,uid){
   await updateDoc(doc(db,'users',uid),{role});
   toast('Үүрэг шинэчлэгдлээ'); renderAdmin();
 };
+window.changePass=async function(e,uid){
+  e.preventDefault();
+  const pass=new FormData(e.target).get('pass');
+  if(!pass.trim()){ toast('Нууц үг хоосон байна',false); return; }
+  await updateDoc(doc(db,'users',uid),{password:pass.trim()});
+  toast('✓ Нууц үг шинэчлэгдлээ'); e.target.reset();
+};
 async function adminAddUser(e){
   e.preventDefault();
   const name=document.getElementById('a-name').value.trim();
   const rank=document.getElementById('a-rank').value.trim();
   const dept=document.getElementById('a-dept').value;
   const role=document.getElementById('a-role').value;
+  const pass=document.getElementById('a-pass').value.trim()||'1234';
   const newId=String(Date.now());
-  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,createdAt:serverTimestamp()});
+  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,password:pass,createdAt:serverTimestamp()});
   toast(`✓ ${name} нэмэгдлээ`);
   e.target.reset(); renderAdmin();
 }
+window.changeAdminPass=async function(e){
+  e.preventDefault();
+  const newPass=document.getElementById('new-admin-pass').value.trim();
+  if(!newPass){ toast('Нууц үг хоосон',false); return; }
+  await setDoc(doc(db,'settings','admin'),{password:newPass});
+  toast('✓ Admin нууц үг шинэчлэгдлээ'); e.target.reset();
+};
 
 // ── Init ────────────────────────────────────────────────
 (async()=>{
   try{
     await seedUsers();
-    await renderHome();
+    await populateLoginSelect();
   } catch(err){
-    document.getElementById('home-users-list').innerHTML=
-      `<div class="alert alert-danger"><strong>Firebase холболт амжилтгүй:</strong><br>${err.message}<br><small>firebaseConfig-г зөв оруулсан эсэхийг шалгана уу.</small></div>`;
+    document.getElementById('login-page').innerHTML=
+      `<div class="alert alert-danger m-4"><strong>Firebase холболт амжилтгүй:</strong><br>${err.message}</div>`;
   }
 })();
 </script>
 </body>
 </html>
-  
