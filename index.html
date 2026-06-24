@@ -771,4 +771,144 @@ async function loadConsolidated(){
   for(const dk of DEPT_ORDER){
     const dReps=Object.values(reps).filter(r=>r.department===dk);
     if(!dReps.length) continue;
-    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi
+    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}</h5>`;
+    for(const r of dReps){
+      const d=r.data||{};
+      html+=`<div class="card mb-3">
+        <div class="card-header py-2 d-flex justify-content-between" style="background:#f0f4ff;color:var(--brand)">
+          <span class="fw-semibold">${r.rank||''} ${r.userName||''}</span>
+          <span class="badge" style="background:var(--brand)">${ROLE_LABELS[r.role]||r.role||''}</span>
+        </div><div class="card-body pb-2">`;
+      const secs=ROLE_FORMS[r.role]||[];
+      for(const sec of secs){
+        html+=`<div class="sec-head">${sec.t}</div>`;
+        if(sec.table){
+          html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
+            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}</th>`).join('')}</tr></thead><tbody>`;
+          for(const cat of sec.cats){
+            const ck='tbl_'+catKey(cat)+'__';
+            html+=`<tr><td class="fw-semibold small">${cat}</td>`;
+            for(const col of sec.cols) html+=`<td class="text-center">${d[ck+col.id]||'—'}</td>`;
+            html+='</tr>';
+          }
+          html+='</tbody></table></div>';
+        } else {
+          html+='<div class="row g-2 mb-2">';
+          for(const f of sec.f){
+            if(f.ta){
+              if(d[f.id]) html+=`<div class="col-12"><span class="fw-semibold small">${f.l}:</span> <span class="text-muted">${d[f.id]}</span></div>`;
+            } else {
+              html+=`<div class="col-6 col-md-4 col-lg-3">
+                <div class="text-muted" style="font-size:.75rem">${f.l}</div>
+                <div class="fw-semibold">${d[f.id]!==undefined&&d[f.id]!==''?d[f.id]+' <span class="unit">'+f.u+'</span>':'—'}</div>
+              </div>`;
+            }
+          }
+          html+='</div>';
+        }
+      }
+      if(d.hiiseh_ajil||d.hiikh_ajil){
+        html+=`<div class="sec-head">Ерөнхий тайлан</div>`;
+        if(d.hiiseh_ajil) html+=`<p class="small mb-1"><strong>Хийсэн ажил:</strong> ${d.hiiseh_ajil}</p>`;
+        if(d.hiikh_ajil) html+=`<p class="small mb-1"><strong>Хийх ажил:</strong> ${d.hiikh_ajil}</p>`;
+        if(d.temdegleltar) html+=`<p class="small mb-0"><strong>Тэмдэглэл:</strong> ${d.temdegleltar}</p>`;
+      }
+      html+='</div></div>';
+    }
+  }
+  if(!Object.keys(reps).length) html+='<div class="alert alert-info mt-3">Энэ 7 хоногт тайлан байхгүй байна.</div>';
+  body.innerHTML=html;
+}
+
+// ── Admin ──────────────────────────────────────────────
+async function renderAdmin(){
+  await loadUsers(true);
+  const roleSelect=document.getElementById('a-role');
+  if(!roleSelect.options.length){
+    for(const [k,v] of Object.entries(ROLE_LABELS)){
+      const o=document.createElement('option'); o.value=k; o.textContent=v; roleSelect.appendChild(o);
+    }
+  }
+  let html='';
+  for(const u of allUsers){
+    html+=`<tr>
+      <td>${u.id}</td>
+      <td>${u.rank||''} ${u.name}</td>
+      <td style="font-size:.8rem">${DEPT_NAMES[u.department]||u.department}</td>
+      <td style="font-size:.8rem">${ROLE_LABELS[u.role]||u.role}</td>
+      <td>${u.isActive!==false?'<span class="badge bg-success">Идэвхтэй</span>':'<span class="badge bg-secondary">Идэвхгүй</span>'}</td>
+      <td>
+        <select class="form-select form-select-sm" style="width:auto;font-size:.8rem" onchange="changeRole('${u.id}',this.value)">
+          ${Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <div class="d-flex gap-1 align-items-center">
+          <input type="text" class="form-control form-control-sm" id="pass-${u.id}" placeholder="${u.password||'1234'}" style="width:80px;font-size:.8rem">
+          <button class="btn btn-sm btn-outline-primary" onclick="changePass('${u.id}')">Солих</button>
+          <button class="btn btn-sm ${u.isActive!==false?'btn-outline-danger':'btn-outline-success'}" onclick="toggleActive('${u.id}',${u.isActive===false})">
+            ${u.isActive!==false?'Хаах':'Нээх'}
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }
+  document.getElementById('admin-users-table').innerHTML=html;
+}
+
+window.changeRole=async function(uid,newRole){
+  await updateDoc(doc(db,'users',uid),{role:newRole});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.role=newRole;
+  toast('Үүрэг өөрчлөгдлөө ✓');
+};
+window.changePass=async function(uid){
+  const inp=document.getElementById('pass-'+uid);
+  const np=inp.value.trim(); if(!np){toast('Нууц үг хоосон',false);return;}
+  await updateDoc(doc(db,'users',uid),{password:np});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.password=np;
+  inp.value=''; inp.placeholder=np;
+  toast('Нууц үг солигдлоо ✓');
+};
+window.toggleActive=async function(uid,active){
+  await updateDoc(doc(db,'users',uid),{isActive:active});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.isActive=active;
+  renderAdmin(); populateLoginSelect();
+  toast(active?'Идэвхжүүллээ ✓':'Хаалаа ✓');
+};
+window.changeAdminPass=async function(e){
+  e.preventDefault();
+  const inp=document.getElementById('new-admin-pass');
+  const np=inp.value.trim(); if(!np) return;
+  await setDoc(doc(db,'settings','admin'),{password:np});
+  inp.value=''; toast('Admin нууц үг солигдлоо ✓');
+};
+window.adminAddUser=async function(e){
+  e.preventDefault();
+  const rank=document.getElementById('a-rank').value.trim();
+  const name=document.getElementById('a-name').value.trim();
+  const dept=document.getElementById('a-dept').value;
+  const role=document.getElementById('a-role').value;
+  const pass=document.getElementById('a-pass').value.trim()||'1234';
+  if(!name){toast('Нэр оруулна уу',false);return;}
+  await loadUsers(true);
+  const newId=String(Math.max(0,...allUsers.map(u=>Number(u.id)||0))+1);
+  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,password:pass,createdAt:serverTimestamp()});
+  ['a-rank','a-name','a-pass'].forEach(id=>{document.getElementById(id).value='';});
+  toast(`${rank} ${name} нэмэгдлээ ✓`);
+  await loadUsers(true); renderAdmin(); populateLoginSelect();
+};
+
+function toast(msg,ok=true){
+  const d=document.createElement('div');
+  d.className=`alert alert-${ok?'success':'danger'} py-2 px-3 shadow`;
+  d.style.cssText='min-width:200px;font-size:.87rem';
+  d.textContent=msg;
+  document.getElementById('toast-wrap').appendChild(d);
+  setTimeout(()=>d.remove(),3000);
+}
+
+// ── Startup ─────────────────────────────────────────────
+seedUsers().then(()=>populateLoginSelect());
+</script>
+</body>
+</html>
