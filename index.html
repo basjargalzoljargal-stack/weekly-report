@@ -105,7 +105,7 @@ input[type=number]{max-width:170px}
 <div id="toast-wrap" style="position:fixed;top:70px;right:16px;z-index:9999"></div>
 
 <!-- HOME -->
-<div id="view-home" class="view active">
+<div id="view-home" class="view">
   <div class="row justify-content-center">
    <div class="col-lg-7">
     <div class="card mb-4">
@@ -546,14 +546,18 @@ async function doAdminLogin(e){
   enterApp();
 }
 
-function enterApp(){
+async function enterApp(){
   document.getElementById('login-page').style.display='none';
   document.getElementById('main-app').style.display='block';
   document.getElementById('nav-username').textContent=loggedInUser.rank+' '+loggedInUser.name;
   if(isAdmin) document.getElementById('nav-admin-btn').classList.remove('d-none');
   else document.getElementById('nav-admin-btn').classList.add('d-none');
   if(isAdmin){ showView('admin'); return; }
+  // Set currentWeek so renderReportForm works correctly
+  if(!currentWeek){ currentWeek=weekDates(); }
   currentUser=loggedInUser;
+  // Load existing reports in background then render
+  await loadWeekReports(currentWeek.start);
   renderReportForm();
   showView('report');
 }
@@ -569,6 +573,7 @@ function doLogout(){
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
+  if(name==='home') renderHome();
   if(name==='consolidated') loadConsolidated();
   if(name==='admin') renderAdmin();
 }
@@ -586,7 +591,8 @@ async function seedUsers(){
 }
 
 // ── Load users ─────────────────────────────────────────
-async function loadUsers(){
+async function loadUsers(force=false){
+  if(!force && allUsers.length>0) return allUsers;
   const snap=await getDocs(query(collection(db,'users'),orderBy('__name__')));
   allUsers=[];
   snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
@@ -765,143 +771,4 @@ async function loadConsolidated(){
   for(const dk of DEPT_ORDER){
     const dReps=Object.values(reps).filter(r=>r.department===dk);
     if(!dReps.length) continue;
-    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}</h5>`;
-    for(const r of dReps){
-      const d=r.data||{};
-      html+=`<div class="card mb-3"><div class="card-header py-2 d-flex justify-content-between" style="background:#f0f4ff;color:var(--brand)">
-        <span class="fw-semibold">${r.rank} ${r.userName}
-          <span class="badge ms-1" style="background:var(--brand);font-size:.7rem">${ROLE_LABELS[r.role]||r.role}</span></span>
-        <span class="text-muted small">${r.submittedAt||''}</span>
-      </div><div class="card-body py-2 px-3 small">`;
-
-      // Role summary
-      html+=renderRoleSummary(r.role,d);
-
-      if(d.hiiseh_ajil) html+=`<div class="mt-2"><strong>Хийсэн ажил:</strong><div class="ps-2 text-secondary" style="white-space:pre-wrap">${d.hiiseh_ajil}</div></div>`;
-      if(d.hiikh_ajil) html+=`<div class="mt-1"><strong>Хийх ажил:</strong><div class="ps-2 text-secondary" style="white-space:pre-wrap">${d.hiikh_ajil}</div></div>`;
-      html+='</div></div>';
-    }
-  }
-  body.innerHTML=html;
-}
-
-function badge(label,val,cls='bg-secondary'){
-  return `<span class="badge ${cls} me-1">${label}</span> <strong>${val||'—'}</strong> `;
-}
-function renderRoleSummary(role,d){
-  let h='<div class="d-flex flex-wrap gap-1 align-items-center mb-1">';
-  if(role==='neg_tseg'){
-    h+=badge('Нийт',d.niit_irsen)+badge('Шийдвэр гүйцэтгэл',d.shdg_guitsetgel)+badge('Бусад',d.busad_asuudlaar)+badge('Холбосон',d.holbon_shiydsersen)+badge('Лавлагаа',d.lavlagaa_olgos);
-  } else if(role==='zorchil'){
-    h+=badge('Гомдол',d.gomDol_too)+badge('Торгуулийн хүн',d.torguul_hun)+badge('Торгуулийн дүн',d.torguul_dun,'bg-dark')+badge('Баривч',d.barivch_hun);
-    h+=`</div><div class="d-flex flex-wrap gap-1 mt-1">`;
-    h+=badge('Өссөн нийт',d.oss_niit,'bg-dark')+badge('Хялбаршуулсан',d.oss_hyalbar_hun,'bg-dark')+badge('Хүүхдийн тэтгэлэг',d.oss_hk_torguul_hun,'bg-dark');
-  } else if(role==='bus_orgodol'){
-    h+=badge('Авсан',d.khuleen_avsan)+badge('Шийдвэрлэсэн',d.shiydsersen,'bg-success')+badge('Хянагдаж байгаа',d.khyanagdaj,'bg-warning text-dark')+badge('Үндэслэлтэй',d.undesleltei,'bg-success')+badge('Үндэслэлгүй',d.undeslelnugui,'bg-danger');
-  } else if(role==='tsakhim'){
-    h+=badge('Эрх түдгэлз.',d.erh_tudgelj)+badge('Эрх сэргээсэн',d.erh_sergeesen)+badge('Засварласан',d.zasvar_barimt)+badge('Эрэн сурвалж.',d.eren_niit)+badge('Хаяг тогтоосон',d.khayag_togtos);
-  } else if(role==='hil'){
-    h+=badge('Түдгэлзүүлсэн',d.hil_tudgelj)+badge('Сэргээсэн',d.hil_sergeesen)+badge('Барагдуулсан дүн',d.hil_barags_dun,'bg-dark');
-  } else if(role==='medee_too'){
-    const cats=['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'];
-    h+='</div><div class="table-responsive"><table class="table table-sm table-bordered mb-1"><thead><tr><th>Ангилал</th><th>Биелүүлбэл зохих</th><th>Бодитой биелүүлсэн</th><th>Бодит%</th><th>Мөнгөн%</th></tr></thead><tbody>';
-    for(const cat of cats){
-      const ck='tbl_'+catKey(cat)+'__';
-      h+=`<tr><td>${cat}</td><td>${d[ck+'bieluu_too']||'—'} ш/${d[ck+'bieluu_dun']||'—'}</td><td>${d[ck+'bodit_too']||'—'} ш/${d[ck+'bodit_dun']||'—'}</td><td>${d[ck+'bodit_pct']||'—'}%</td><td>${d[ck+'mongon_pct']||'—'}%</td></tr>`;
-    }
-    h+='</tbody></table>';
-    h+=badge('Шинэ баримт',d.shine_barimt)+badge('Хүүхэд нийт',d.tetgleg_huukhed);
-    return h+'</div>';
-  } else if(role==='nekhemjlel'){
-    h+=badge('Нийт нэхэмжлэл',d.niit_nekh)+badge('Эцэслэсэн',d.etsesen)+badge('Хяналтад нийт',d.hyan_niit,'bg-dark')+badge('Дуудлага худалдаа',d.hyan_duudlaga,'bg-dark')+badge('Үнэлгээ',d.hyan_unelgee,'bg-dark');
-  } else if(role==='lavlagaa_negtle'){
-    h+=badge('Нийт лавлагаа',d.lav_niit)+badge('Цахим шуудан',d.lav_tsakhim)+badge('Тулгасан',d.lav_tulgaj)+badge('Иргэнд хариу',d.lav_irgend);
-  } else if(role==='orgodol_central'){
-    h+=badge('Нийт ирсэн',d.org_irsen_niit)+badge('Шийдвэрлэсэн',d.org_shiyds_tot,'bg-success')+badge('Хянагдаж байгаа',d.org_khyanagdaj,'bg-warning text-dark');
-  }
-  return h+'</div>';
-}
-
-// ── Admin ───────────────────────────────────────────────
-async function renderAdmin(){
-  await loadUsers();
-  // Populate role select
-  const rs=document.getElementById('a-role');
-  if(!rs.options.length){
-    for(const[k,v] of Object.entries(ROLE_LABELS)){
-      const o=document.createElement('option'); o.value=k; o.textContent=v; rs.appendChild(o);
-    }
-  }
-  const tb=document.getElementById('admin-users-table');
-  let html='';
-  for(const u of allUsers){
-    const roleOpts=Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('');
-    html+=`<tr class="${u.isActive?'':'table-light text-muted'}">
-      <td>${u.id}</td>
-      <td>${u.rank} <strong>${u.name}</strong></td>
-      <td><small>${DEPT_NAMES[u.department]||u.department}</small></td>
-      <td><span class="badge bg-secondary">${ROLE_LABELS[u.role]||u.role}</span></td>
-      <td><button class="btn btn-sm ${u.isActive?'btn-outline-danger':'btn-outline-success'}"
-          onclick="toggleUser('${u.id}',${u.isActive})">${u.isActive?'Идэвхгүй болгох':'Идэвхжүүлэх'}</button></td>
-      <td><form onsubmit="changeRole(event,'${u.id}')" class="d-flex gap-1">
-        <select name="role" class="form-select form-select-sm" style="width:auto">${roleOpts}</select>
-        <button type="submit" class="btn btn-sm btn-outline-primary">✓</button>
-      </form></td>
-      <td><form onsubmit="changePass(event,'${u.id}')" class="d-flex gap-1">
-        <input type="text" name="pass" class="form-control form-control-sm" style="width:110px" placeholder="Шинэ нууц үг">
-        <button type="submit" class="btn btn-sm btn-outline-warning">✓</button>
-      </form></td>
-    </tr>`;
-  }
-  tb.innerHTML=html;
-}
-window.toggleUser=async function(uid,cur){
-  await updateDoc(doc(db,'users',uid),{isActive:!cur});
-  toast(cur?'Идэвхгүй болголоо':'Идэвхжүүллээ'); renderAdmin();
-};
-window.changeRole=async function(e,uid){
-  e.preventDefault();
-  const role=new FormData(e.target).get('role');
-  await updateDoc(doc(db,'users',uid),{role});
-  toast('Үүрэг шинэчлэгдлээ'); renderAdmin();
-};
-window.changePass=async function(e,uid){
-  e.preventDefault();
-  const pass=new FormData(e.target).get('pass');
-  if(!pass.trim()){ toast('Нууц үг хоосон байна',false); return; }
-  await updateDoc(doc(db,'users',uid),{password:pass.trim()});
-  toast('✓ Нууц үг шинэчлэгдлээ'); e.target.reset();
-};
-async function adminAddUser(e){
-  e.preventDefault();
-  const name=document.getElementById('a-name').value.trim();
-  const rank=document.getElementById('a-rank').value.trim();
-  const dept=document.getElementById('a-dept').value;
-  const role=document.getElementById('a-role').value;
-  const pass=document.getElementById('a-pass').value.trim()||'1234';
-  const newId=String(Date.now());
-  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,password:pass,createdAt:serverTimestamp()});
-  toast(`✓ ${name} нэмэгдлээ`);
-  e.target.reset(); renderAdmin();
-}
-window.changeAdminPass=async function(e){
-  e.preventDefault();
-  const newPass=document.getElementById('new-admin-pass').value.trim();
-  if(!newPass){ toast('Нууц үг хоосон',false); return; }
-  await setDoc(doc(db,'settings','admin'),{password:newPass});
-  toast('✓ Admin нууц үг шинэчлэгдлээ'); e.target.reset();
-};
-
-// ── Init ────────────────────────────────────────────────
-(async()=>{
-  try{
-    await seedUsers();
-    await populateLoginSelect();
-  } catch(err){
-    document.getElementById('login-page').innerHTML=
-      `<div class="alert alert-danger m-4"><strong>Firebase холболт амжилтгүй:</strong><br>${err.message}</div>`;
-  }
-})();
-</script>
-</body>
-</html>
+    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi
