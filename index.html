@@ -574,7 +574,7 @@ async function loadConsolidated(){
   const sel=document.getElementById('week-selector');
   // Populate last 8 weeks
   if(!sel.options.length){
-    for(let i=0;i>=–7;i--){
+    for(let i=0;i>=-7;i--){
       const w=weekDates(i);
       const opt=document.createElement('option');
       opt.value=w.start; opt.textContent=fmtWeek(w.start,w.end);
@@ -730,3 +730,4 @@ async function adminAddUser(e){
 </script>
 </body>
 </html>
+  
