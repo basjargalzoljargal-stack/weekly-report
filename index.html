@@ -107,11 +107,14 @@ input[type=number]{max-width:170px}
 <!-- HOME -->
 <div id="view-home" class="view">
   <div class="row justify-content-center">
-   <div class="col-lg-7">
+   <div class="col-lg-10">
     <div class="card mb-4">
      <div class="card-header d-flex justify-content-between align-items-center">
       <span><i class="bi bi-calendar-week me-2"></i><span id="home-week-label">...</span></span>
-      <span class="badge bg-light text-dark" id="home-week-dates"></span>
+      <div class="d-flex gap-2 align-items-center">
+       <span class="badge bg-light text-dark" id="home-week-dates"></span>
+       <button class="btn btn-sm btn-outline-light" onclick="refreshHome()" title="Шинэчлэх"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
      </div>
      <div class="card-body" id="home-users-list">
       <div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>
@@ -130,10 +133,12 @@ input[type=number]{max-width:170px}
       <span id="report-title">Тайлан</span>
       <div class="d-flex gap-2 align-items-center">
        <span class="text-white-50 small" id="report-week-label"></span>
+       <button class="btn btn-sm btn-outline-light" onclick="refreshReport()" title="Шинэчлэх"><i class="bi bi-arrow-clockwise"></i></button>
        <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-arrow-left"></i></button>
       </div>
      </div>
      <div class="card-body">
+      <div id="report-behalf-info"></div>
       <div id="report-submitted-info"></div>
       <form id="report-form" onsubmit="submitReport(event)">
        <div id="report-fields"></div>
@@ -227,7 +232,7 @@ input[type=number]{max-width:170px}
     <div class="card-body p-0">
      <div class="table-responsive">
       <table class="table table-hover mb-0 align-middle">
-       <thead><tr><th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Үүрэг солих</th><th>Нууц үг солих</th></tr></thead>
+       <thead><tr><th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Цол / Нэр засах</th><th>Үүрэг солих</th><th>Нууц үг / Байдал</th></tr></thead>
        <tbody id="admin-users-table"></tbody>
       </table>
      </div>
@@ -497,6 +502,9 @@ window.showAdminLogin=showAdminLogin;
 window.doLogin=doLogin;
 window.doAdminLogin=doAdminLogin;
 window.doLogout=doLogout;
+window.refreshReport=refreshReport;
+window.refreshHome=refreshHome;
+window.changeRankName=changeRankName;
 window.changeRole=changeRole;
 window.changePass=changePass;
 window.toggleActive=toggleActive;
@@ -562,10 +570,9 @@ async function enterApp(){
   if(isAdmin) document.getElementById('nav-admin-btn').classList.remove('d-none');
   else document.getElementById('nav-admin-btn').classList.add('d-none');
   if(isAdmin){ showView('admin'); return; }
-  // Set currentWeek so renderReportForm works correctly
   if(!currentWeek){ currentWeek=weekDates(); }
   currentUser=loggedInUser;
-  // Load existing reports in background then render
+  if(loggedInUser.role==='head'){ showView('home'); return; }
   await loadWeekReports(currentWeek.start);
   renderReportForm();
   showView('report');
@@ -620,32 +627,145 @@ async function renderHome(){
   const w=weekDates(); currentWeek=w;
   document.getElementById('home-week-label').textContent=fmtWeek(w.start,w.end);
   document.getElementById('home-week-dates').textContent=`${w.start} — ${w.end}`;
+  const el=document.getElementById('home-users-list');
+  el.innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
   await loadUsers();
   await loadWeekReports(w.start);
-  const el=document.getElementById('home-users-list');
-  let html='<p class="text-muted mb-3">Нэрээ сонгоно уу:</p>';
-  for(const dk of DEPT_ORDER){
-    const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
-    if(!dus.length) continue;
-    html+=`<div class="sec-head">${DEPT_NAMES[dk]}</div><div class="row g-2 mb-2">`;
-    for(const u of dus){
-      const done=!!allReports[u.id];
-      html+=`<div class="col-md-6"><div class="user-card" onclick="selectUser('${u.id}')">
-        <div class="avatar">${u.name[0]}</div>
-        <div class="flex-grow-1">
-          <div class="fw-semibold">${u.rank} ${u.name}</div>
-          <div class="text-muted" style="font-size:.78rem">${ROLE_LABELS[u.role]||u.role}</div>
-        </div>
-        ${done?'<span class="badge bg-success"><i class="bi bi-check"></i> Илгээсэн</span>':'<span class="badge bg-light text-muted">Хүлээгдэж байна</span>'}
-      </div></div>`;
+  const activeUsers=allUsers.filter(u=>u.isActive);
+  const subList=activeUsers.filter(u=>!!allReports[u.id]);
+  const pendList=activeUsers.filter(u=>!allReports[u.id]);
+  let html=`<div class="row g-2 mb-3">
+    <div class="col-4"><div class="text-center p-2 rounded" style="background:#e8edf8">
+      <div class="fw-bold fs-5" style="color:var(--brand)">${activeUsers.length}</div>
+      <div class="text-muted small">Нийт</div>
+    </div></div>
+    <div class="col-4"><div class="text-center p-2 rounded" style="background:#d1fae5">
+      <div class="fw-bold fs-5 text-success">${subList.length}</div>
+      <div class="text-muted small">Илгээсэн</div>
+    </div></div>
+    <div class="col-4"><div class="text-center p-2 rounded" style="background:#fee2e2">
+      <div class="fw-bold fs-5 text-danger">${pendList.length}</div>
+      <div class="text-muted small">Хүлээгдэж буй</div>
+    </div></div>
+  </div>`;
+  const isHead=loggedInUser&&loggedInUser.role==='head';
+  if(isHead||isAdmin){
+    // ── TABLE VIEW for head/admin: fill on behalf ──────────
+    html+=`<div class="alert alert-info py-2 mb-3" style="font-size:.88rem"><i class="bi bi-info-circle me-1"></i>Алба хаагчийн мөрийн <strong>Бөглөх</strong> товч дарж тэдний өмнөөс бөглөх боломжтой.</div>`;
+    if(pendList.length){
+      html+=`<div class="mb-3 p-2 rounded" style="background:#fff3cd;font-size:.85rem">
+        <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+        <strong>Илгээгүй алба хаагчид:</strong> `;
+      html+=pendList.map(u=>`<span class="badge bg-warning text-dark me-1">${u.rank} ${u.name}</span>`).join('');
+      html+='</div>';
     }
-    html+='</div>';
+    const deptsToShow=isAdmin?DEPT_ORDER:[loggedInUser.department];
+    for(const dk of deptsToShow){
+      const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
+      if(!dus.length) continue;
+      const dSub=dus.filter(u=>!!allReports[u.id]).length;
+      html+=`<div class="sec-head d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-building me-1"></i>${DEPT_NAMES[dk]}</span>
+        <span class="badge bg-light text-dark">${dSub}/${dus.length} илгээсэн</span>
+      </div>
+      <div class="table-responsive mb-4">
+      <table class="table table-hover align-middle border rounded mb-0" style="font-size:.88rem">
+      <thead class="table-light"><tr>
+        <th style="width:28px">#</th>
+        <th>Нэр</th>
+        <th>Үүрэг</th>
+        <th>Байдал</th>
+        <th style="width:110px" class="text-center">Үйлдэл</th>
+      </tr></thead><tbody>`;
+      let idx=1;
+      for(const u of dus){
+        const rep=allReports[u.id];
+        const done=!!rep;
+        const d=rep?rep.data||{}:{};
+        // Build compact data summary from role-specific fields
+        const secs=ROLE_FORMS[u.role]||[];
+        let summary='';
+        if(done){
+          let pairs=[];
+          for(const sec of secs){
+            if(sec.table){
+              // For table-type (medee_too): show totals row
+              for(const col of sec.cols){
+                let total=0; let hasVal=false;
+                for(const cat of sec.cats){
+                  const v=d['tbl_'+catKey(cat)+'__'+col.id];
+                  if(v!==undefined&&v!==''){total+=parseFloat(v)||0; hasVal=true;}
+                }
+                if(hasVal) pairs.push(`<span class="text-muted" style="font-size:.75rem">${col.l}:</span> <strong>${total.toLocaleString()}</strong> <span class="unit">${col.u}</span>`);
+              }
+            } else {
+              for(const f of sec.f){
+                if(f.ta) continue; // skip textareas
+                const v=d[f.id];
+                if(v!==undefined&&v!=='') pairs.push(`<span class="text-muted" style="font-size:.75rem">${f.l}:</span> <strong>${Number(v).toLocaleString()}</strong> <span class="unit">${f.u}</span>`);
+              }
+            }
+          }
+          if(d.hiiseh_ajil) pairs.push(`<span class="text-muted" style="font-size:.75rem">Хийсэн ажил:</span> <span style="font-size:.8rem">${d.hiiseh_ajil.slice(0,60)}${d.hiiseh_ajil.length>60?'...':''}</span>`);
+          if(pairs.length) summary=`<div class="mt-1 d-flex flex-wrap gap-2" style="font-size:.8rem">${pairs.map(p=>`<span class="border rounded px-1 py-0" style="background:#f8f9fa">${p}</span>`).join('')}</div>`;
+        }
+        html+=`<tr class="${done?'':'table-warning bg-opacity-25'}">
+          <td class="text-muted">${idx++}</td>
+          <td>
+            <div><strong>${u.rank} ${u.name}</strong></div>
+            ${summary}
+          </td>
+          <td class="text-muted" style="font-size:.82rem">${ROLE_LABELS[u.role]||u.role}</td>
+          <td>${done
+            ?`<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Илгээсэн</span>
+              <div class="text-muted" style="font-size:.72rem">${rep.submittedAt||''}</div>`
+            :'<span class="badge bg-danger"><i class="bi bi-clock me-1"></i>Илгээгүй</span>'}
+          </td>
+          <td class="text-center">
+            ${u.role==='head'
+              ?`<a class="btn btn-sm btn-outline-primary" href="#" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</a>`
+              :`<button class="btn btn-sm ${done?'btn-outline-secondary':'btn-primary'}" onclick="selectUser('${u.id}')"><i class="bi bi-pencil-square me-1"></i>${done?'Засах':'Бөглөх'}</button>`}
+          </td>
+        </tr>`;
+      }
+      html+='</tbody></table></div>';
+    }
+  } else {
+    // ── CARD VIEW for regular users ─────────────────────────
+    if(pendList.length){
+      html+=`<div class="mb-2 p-2 rounded" style="background:#fff3cd;font-size:.85rem">
+        <i class="bi bi-clock text-warning me-1"></i><strong>Илгээгүй:</strong> `;
+      html+=pendList.map(u=>`<span class="badge bg-warning text-dark me-1">${u.rank} ${u.name}</span>`).join('');
+      html+='</div>';
+    }
+    html+='<hr class="my-2">';
+    for(const dk of DEPT_ORDER){
+      const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
+      if(!dus.length) continue;
+      html+=`<div class="sec-head">${DEPT_NAMES[dk]}</div><div class="row g-2 mb-2">`;
+      for(const u of dus){
+        const rep=allReports[u.id];
+        const done=!!rep;
+        html+=`<div class="col-md-6"><div class="user-card" onclick="selectUser('${u.id}')">
+          <div class="avatar">${u.name[0]}</div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold">${u.rank} ${u.name}</div>
+            <div class="text-muted" style="font-size:.78rem">${ROLE_LABELS[u.role]||u.role}</div>
+            ${done?`<div style="font-size:.72rem;color:#198754"><i class="bi bi-clock-history"></i> ${rep.submittedAt||'Хадгалсан'}</div>`:''}
+          </div>
+          ${done?'<span class="badge bg-success"><i class="bi bi-check"></i> Илгээсэн</span>':'<span class="badge bg-light text-muted">Хүлээгдэж байна</span>'}
+        </div></div>`;
+      }
+      html+='</div>';
+    }
   }
   el.innerHTML=html;
 }
+function refreshHome(){ renderHome(); toast('Шинэчлэгдлээ ✓'); }
 window.selectUser=function(uid){
   currentUser=allUsers.find(u=>u.id===uid);
   if(!currentUser) return;
+  if(!currentWeek) currentWeek=weekDates();
   renderReportForm();
   showView('report');
 };
@@ -664,6 +784,11 @@ function renderReportForm(){
   const d=ex.data||{};
 
   // Submitted info
+  const bi=document.getElementById('report-behalf-info');
+  if(bi && loggedInUser && loggedInUser.id!==currentUser.id){
+    bi.innerHTML=`<div class="alert alert-warning py-2 mb-2"><i class="bi bi-person-fill-gear me-1"></i>
+      Та <strong>${currentUser.rank} ${currentUser.name}</strong>-ын тайланг орлон бөглөж байна</div>`;
+  } else if(bi){ bi.innerHTML=''; }
   const si=document.getElementById('report-submitted-info');
   si.innerHTML=ex.submittedAt
     ? `<div class="alert alert-success py-2 mb-3"><i class="bi bi-check-circle me-1"></i>
@@ -735,7 +860,8 @@ async function submitReport(e){
     });
     allReports[currentUser.id]={userId:currentUser.id,data,submittedAt:new Date().toLocaleString('mn-MN')};
     toast('✓ Тайлан хадгалагдлаа');
-    renderReportForm();
+    const filledOnBehalf=loggedInUser&&loggedInUser.id!==currentUser.id;
+    if(filledOnBehalf){ showView('home'); } else { renderReportForm(); }
   } catch(err){ toast('Алдаа гарлаа: '+err.message, false); }
   btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy me-1"></i>Хадгалах';
 }
@@ -745,7 +871,7 @@ async function loadConsolidated(){
   const sel=document.getElementById('week-selector');
   // Populate last 8 weeks
   if(!sel.options.length){
-    for(let i=0;i>=-7;i--){
+    for(let i=0;i>=-19;i--){
       const w=weekDates(i);
       const opt=document.createElement('option');
       opt.value=w.start; opt.textContent=fmtWeek(w.start,w.end);
@@ -764,8 +890,10 @@ async function loadConsolidated(){
   const reps={};
   snap.forEach(d=>{const r=d.data(); reps[r.userId]=r;});
 
+  const headDept=(loggedInUser&&loggedInUser.role==='head')?loggedInUser.department:null;
+  const visibleDepts=headDept?[headDept]:DEPT_ORDER;
   let html='<h6 class="fw-bold mb-3">Бөглөлтийн байдал</h6>';
-  for(const dk of DEPT_ORDER){
+  for(const dk of visibleDepts){
     const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
     if(!dus.length) continue;
     html+=`<div class="mb-3"><div class="sec-head">${DEPT_NAMES[dk]}</div><div class="d-flex flex-wrap gap-2">`;
@@ -777,7 +905,7 @@ async function loadConsolidated(){
   }
   html+='<hr>';
 
-  for(const dk of DEPT_ORDER){
+  for(const dk of visibleDepts){
     const dReps=Object.values(reps).filter(r=>r.department===dk);
     if(!dReps.length) continue;
     html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}</h5>`;
@@ -847,14 +975,23 @@ async function renderAdmin(){
       <td style="font-size:.8rem">${ROLE_LABELS[u.role]||u.role}</td>
       <td>${u.isActive!==false?'<span class="badge bg-success">Идэвхтэй</span>':'<span class="badge bg-secondary">Идэвхгүй</span>'}</td>
       <td>
+        <div class="d-flex flex-column gap-1">
+          <div class="d-flex gap-1">
+            <input type="text" class="form-control form-control-sm" id="rank-${u.id}" value="${u.rank||''}" style="width:50px;font-size:.8rem" placeholder="цол">
+            <input type="text" class="form-control form-control-sm" id="name-${u.id}" value="${u.name||''}" style="width:90px;font-size:.8rem" placeholder="нэр">
+            <button class="btn btn-sm btn-outline-secondary" onclick="changeRankName('${u.id}')"><i class="bi bi-check-lg"></i></button>
+          </div>
+        </div>
+      </td>
+      <td>
         <select class="form-select form-select-sm" style="width:auto;font-size:.8rem" onchange="changeRole('${u.id}',this.value)">
           ${Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('')}
         </select>
       </td>
       <td>
         <div class="d-flex gap-1 align-items-center">
-          <input type="text" class="form-control form-control-sm" id="pass-${u.id}" placeholder="${u.password||'1234'}" style="width:80px;font-size:.8rem">
-          <button class="btn btn-sm btn-outline-primary" onclick="changePass('${u.id}')">Солих</button>
+          <input type="text" class="form-control form-control-sm" id="pass-${u.id}" placeholder="${u.password||'1234'}" style="width:70px;font-size:.8rem">
+          <button class="btn btn-sm btn-outline-primary" onclick="changePass('${u.id}')">Нууц үг</button>
           <button class="btn btn-sm ${u.isActive!==false?'btn-outline-danger':'btn-outline-success'}" onclick="toggleActive('${u.id}',${u.isActive===false})">
             ${u.isActive!==false?'Хаах':'Нээх'}
           </button>
@@ -865,6 +1002,21 @@ async function renderAdmin(){
   document.getElementById('admin-users-table').innerHTML=html;
 }
 
+async function refreshReport(){
+  if(!currentWeek) return;
+  await loadWeekReports(currentWeek.start);
+  renderReportForm();
+  toast('Шинэчлэгдлээ ✓');
+}
+async function changeRankName(uid){
+  const rank=document.getElementById('rank-'+uid).value.trim();
+  const name=document.getElementById('name-'+uid).value.trim();
+  if(!name){toast('Нэр хоосон байна',false);return;}
+  await updateDoc(doc(db,'users',uid),{rank,name});
+  const u=allUsers.find(x=>x.id===uid); if(u){u.rank=rank;u.name=name;}
+  toast('Цол/Нэр засагдлаа ✓');
+  renderAdmin(); populateLoginSelect();
+}
 async function changeRole(uid,newRole){
   await updateDoc(doc(db,'users',uid),{role:newRole});
   const u=allUsers.find(x=>x.id===uid); if(u) u.role=newRole;
