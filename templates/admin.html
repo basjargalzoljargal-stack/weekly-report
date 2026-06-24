@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Admin — Алба хаагч удирдах{% endblock %}
+{% block content %}
+<div class="row">
+ <div class="col-lg-10 mx-auto">
+
+  <div class="card mb-4">
+   <div class="card-header"><i class="bi bi-people me-2"></i>Алба хаагч нэмэх</div>
+   <div class="card-body">
+    <form method="POST" action="/admin/add" class="row g-3 align-items-end">
+     <div class="col-md-2">
+      <label class="form-label">Цол, зэрэглэл</label>
+      <input type="text" name="rank" class="form-control" placeholder="д/х, х/ч...">
+     </div>
+     <div class="col-md-3">
+      <label class="form-label">Нэр <span class="text-danger">*</span></label>
+      <input type="text" name="name" class="form-control" placeholder="О.Нэр" required>
+     </div>
+     <div class="col-md-3">
+      <label class="form-label">Хэлтэс <span class="text-danger">*</span></label>
+      <select name="department" class="form-select" required>
+       {% for k,v in depts.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+      </select>
+     </div>
+     <div class="col-md-3">
+      <label class="form-label">Үүрэг <span class="text-danger">*</span></label>
+      <select name="role" class="form-select" required>
+       {% for k,v in role_labels.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+      </select>
+     </div>
+     <div class="col-md-1">
+      <button type="submit" class="btn btn-brand w-100"><i class="bi bi-plus-lg"></i></button>
+     </div>
+    </form>
+   </div>
+  </div>
+
+  <div class="card">
+   <div class="card-header"><i class="bi bi-list-ul me-2"></i>Алба хаагчдын жагсаалт</div>
+   <div class="card-body p-0">
+    <div class="table-responsive">
+     <table class="table table-hover mb-0 align-middle">
+      <thead><tr>
+       <th>#</th><th>Нэр</th><th>Хэлтэс</th><th>Үүрэг</th><th>Байдал</th><th>Үүрэг солих</th><th></th>
+      </tr></thead>
+      <tbody>
+       {% for u in users %}
+       <tr class="{{ 'table-light text-muted' if not u.is_active }}">
+        <td>{{ u.id }}</td>
+        <td>{{ u.rank }} <strong>{{ u.name }}</strong></td>
+        <td><small>{{ depts.get(u.department, u.department) }}</small></td>
+        <td><span class="badge bg-secondary">{{ role_labels.get(u.role, u.role) }}</span></td>
+        <td>
+         <form method="POST" action="/admin/toggle/{{ u.id }}" class="d-inline">
+          <button type="submit" class="btn btn-sm {{ 'btn-outline-danger' if u.is_active else 'btn-outline-success' }}">
+           {{ 'Идэвхгүй болгох' if u.is_active else 'Идэвхжүүлэх' }}
+          </button>
+         </form>
+        </td>
+        <td>
+         <form method="POST" action="/admin/role" class="d-flex gap-1">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <select name="role" class="form-select form-select-sm" style="width:auto">
+           {% for k,v in role_labels.items() %}
+           <option value="{{ k }}" {{ 'selected' if u.role==k }}>{{ v }}</option>
+           {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-sm btn-outline-primary">Хадгалах</button>
+         </form>
+        </td>
+        <td></td>
+       </tr>
+       {% endfor %}
+      </tbody>
+     </table>
+    </div>
+   </div>
+  </div>
+
+ </div>
+</div>
+{% endblock %}

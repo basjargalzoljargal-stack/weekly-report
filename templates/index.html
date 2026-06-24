@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Нүүр — 7 Хоногийн Тайлан{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar-week me-2"></i>Энэ долоо хоног: {{ fmt_week }}</span>
+        <span class="badge bg-light text-dark">{{ week.start_date }} — {{ week.end_date }}</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">Нэрээ сонгоно уу:</p>
+
+        {% set dept_order = ['dotood_khyanalт','tsakhim_burtgel','tolovlolt'] %}
+        {% for dept_key in dept_order %}
+          {% set dept_name = depts[dept_key] %}
+          {% set dept_users = users | selectattr('department','equalto', dept_key) | list %}
+          {% if dept_users %}
+          <div class="mb-4">
+            <div class="section-header"><i class="bi bi-people me-1"></i>{{ dept_name }}</div>
+            <div class="row g-2">
+              {% for u in dept_users %}
+              <div class="col-md-6">
+                <a href="/select/{{ u.id }}" class="text-decoration-none">
+                  <div class="border rounded p-2 d-flex align-items-center gap-2 user-card">
+                    <div class="flex-shrink-0 text-white rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:36px;height:36px;background:var(--brand);font-size:.8rem;font-weight:700;">
+                      {{ u.name[0] }}
+                    </div>
+                    <div>
+                      <div class="fw-semibold text-dark">{{ u.rank }} {{ u.name }}</div>
+                      <div class="text-muted" style="font-size:.78rem">
+                        {{ u.role | replace('head','Дарга') | replace('zorchil','Зөрчил')
+                                  | replace('neg_tseg','1 цэг') | replace('bus_orgodol','Бүс')
+                                  | replace('negtle_bus','Нэгтгэгч') | replace('tsakhim','Цахим бүртгэл')
+                                  | replace('hil','Хил') | replace('medee_too','Мэдээ')
+                                  | replace('nekhemjlel','Нэхэмжлэл') | replace('lavlagaa_negtle','Лавлагаа')
+                                  | replace('orgodol_central','Өргөдөл') | replace('dotood_ajil','Дотоод ажил')
+                                  | replace('surgalt','Сургалт') | replace('negtle_main','Нэгтгэгч') }}
+                      </div>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                  </div>
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.user-card { transition: .15s; cursor:pointer; background:#fff; }
+.user-card:hover { background:#f0f4ff; border-color:var(--brand-light) !important; }
+</style>
+{% endblock %}

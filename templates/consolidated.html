@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block title %}Нэгтгэсэн тайлан{% endblock %}
+{% block content %}
+<div class="row">
+ <div class="col-12">
+  <div class="card mb-3">
+   <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-bar-chart me-2"></i>Нэгтгэсэн тайлан — {{ fmt_week }}</span>
+    <div class="d-flex gap-2 align-items-center">
+     <select class="form-select form-select-sm" id="weekSel" style="width:auto"
+             onchange="location='{{ url_for('consolidated') }}/'+this.value">
+      {% for w in all_weeks %}
+      <option value="{{ w.id }}" {{ 'selected' if w.id == week.id }}>
+        {{ w.start_date }} — {{ w.end_date }}
+      </option>
+      {% endfor %}
+     </select>
+     <button onclick="window.print()" class="btn btn-sm btn-outline-light">
+       <i class="bi bi-printer me-1"></i>Хэвлэх
+     </button>
+    </div>
+   </div>
+   <div class="card-body p-3">
+
+    {# ── Submission status ─── #}
+    <h6 class="fw-bold mb-2">Бөглөлтийн байдал</h6>
+    {% set dept_order = ['dotood_khyanalт','tsakhim_burtgel','tolovlolt'] %}
+    {% for dept_key in dept_order %}
+     {% set dept_users = all_users | selectattr('department','equalto', dept_key) | list %}
+     {% if dept_users %}
+     <div class="mb-3">
+      <div class="section-header">{{ depts[dept_key] }}</div>
+      <div class="d-flex flex-wrap gap-2">
+       {% for u in dept_users %}
+       <span class="badge {{ 'bg-success' if u.id in submitted_ids else 'bg-danger' }}">
+         {{ u.rank }} {{ u.name }}
+         <i class="bi {{ 'bi-check' if u.id in submitted_ids else 'bi-clock' }} ms-1"></i>
+       </span>
+       {% endfor %}
+      </div>
+     </div>
+     {% endif %}
+    {% endfor %}
+
+    <hr>
+
+    {# ── Reports by department ─── #}
+    {% for dept_key in dept_order %}
+     {% set dept_reports = reports | selectattr('department','equalto', dept_key) | list %}
+     {% if dept_reports %}
+     <h5 class="mt-4 mb-3" style="color:var(--brand)">
+       <i class="bi bi-building me-2"></i>{{ depts[dept_key] }}
+     </h5>
+
+     {% for r in dept_reports %}
+     <div class="card mb-3">
+      <div class="card-header py-2 d-flex justify-content-between" style="background:#f0f4ff;color:var(--brand)">
+        <span class="fw-semibold">{{ r.rank }} {{ r.name }}
+          <span class="badge" style="background:var(--brand);font-size:.7rem">{{ role_labels.get(r.role, r.role) }}</span>
+        </span>
+        <span class="text-muted" style="font-size:.78rem">{{ r.submitted_at or '' }}</span>
+      </div>
+      <div class="card-body py-2 px-3">
+
+       {# Role-specific data display #}
+       {% set d = r.data %}
+
+       {# 1 цэг #}
+       {% if r.role == 'neg_tseg' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Нийт хандсан</span> <strong>{{ d.get('niit_irsen','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Шийдвэр гүйцэтгэл</span> <strong>{{ d.get('shdg_guitsetgel','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Бусад асуудлаар</span> <strong>{{ d.get('busad_asуudlaar','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Холбон шийдвэрлэсэн</span> <strong>{{ d.get('holbon_shiydsersen','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Лавлагаа олгосон</span> <strong>{{ d.get('lavlagaa_olgosон','—') }}</strong></div>
+       </div>
+
+       {# Зөрчил #}
+       {% elif r.role == 'zorchil' %}
+       <div class="row g-2 small">
+        <div class="col-12 fw-semibold text-muted">Тухайн 7 хоногт:</div>
+        <div class="col-auto"><span class="badge bg-secondary">Гомдол</span> <strong>{{ d.get('gomDol_too','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Торгуулийн хүн</span> <strong>{{ d.get('torguul_hun','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Торгуулийн дүн</span> <strong>{{ d.get('torguul_dun','—') }} ₮</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Баривч</span> <strong>{{ d.get('barivch_hun','—') }}</strong></div>
+        <div class="col-12 fw-semibold text-muted mt-1">Өссөн дүнгээр:</div>
+        <div class="col-auto"><span class="badge bg-dark">Нийт</span> <strong>{{ d.get('oss_niit','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Хялбаршуулсан</span> <strong>{{ d.get('oss_hyalbar_hun','—') }} хүн / {{ d.get('oss_hyalbar_dun','—') }} ₮</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Хүүхдийн тэтгэлэг</span> <strong>{{ d.get('oss_huukhed_torguul_hun','—') }} хүн</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Баривч</span> <strong>{{ d.get('oss_barivch','—') }}</strong></div>
+       </div>
+
+       {# Бүс #}
+       {% elif r.role == 'bus_orgodol' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Хүлээн авсан</span> <strong>{{ d.get('khulEen_avsan','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Шийдвэрлэсэн</span> <strong>{{ d.get('shiydsersen','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Хянагдаж байгаа</span> <strong>{{ d.get('khyanagdaj_baina','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-success">Үндэслэлтэй</span> <strong>{{ d.get('undesleltei','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-danger">Үндэслэлгүй</span> <strong>{{ d.get('undeslelnugui','—') }}</strong></div>
+        {% if d.get('uurg_yavuulsan') %}<div class="col-12 mt-1"><em>Үүрэг:</em> {{ d.uurg_yavuulsan }}</div>{% endif %}
+        {% if d.get('arga_hemjee') %}<div class="col-12"><em>Санал:</em> {{ d.arga_hemjee }}</div>{% endif %}
+       </div>
+
+       {# Цахим бүртгэл #}
+       {% elif r.role == 'tsakhim' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Эрх түдгэлзүүлсэн</span> <strong>{{ d.get('erh_tudgeljuulsen','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Эрх сэргээсэн</span> <strong>{{ d.get('erh_sergeesan','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Засварласан</span> <strong>{{ d.get('засварласан_barimt','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Эрэн сурвалжлагдаж байгаа</span> <strong>{{ d.get('eren_niit','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Хаяг тогтоосон</span> <strong>{{ d.get('khaяg_togtosson','—') }}</strong></div>
+       </div>
+
+       {# Хил #}
+       {% elif r.role == 'hil' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Эрх түдгэлзүүлсэн</span> <strong>{{ d.get('hil_tudgeljuulsen','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Эрх сэргээсэн</span> <strong>{{ d.get('hil_sergeesan','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Барагдуулсан дүн</span> <strong>{{ d.get('hil_tolgoi_dun','—') }} ₮</strong></div>
+       </div>
+
+       {# Мэдээ тоо #}
+       {% elif r.role == 'medee_too' %}
+       {% set cats = ['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'] %}
+       <div class="table-responsive small">
+        <table class="table table-sm table-bordered mb-2">
+         <thead><tr><th>Ангилал</th><th>Биелүүлбэл зохих</th><th>Бодитой биелүүлсэн</th><th>Үлдэгдэл</th><th>Бодит %</th><th>Мөнгөн %</th></tr></thead>
+         <tbody>
+          {% for cat in cats %}
+          {% set ck = 'tbl_' ~ (cat | replace(' ','_') | lower) ~ '__' %}
+          <tr>
+           <td>{{ cat }}</td>
+           <td>{{ d.get(ck~'bieluu_too','—') }} ш / {{ d.get(ck~'bieluu_dun','—') }}</td>
+           <td>{{ d.get(ck~'bodit_too','—') }} ш / {{ d.get(ck~'bodit_dun','—') }}</td>
+           <td>{{ d.get(ck~'uldegdel_too','—') }} ш</td>
+           <td>{{ d.get(ck~'bodit_pct','—') }}%</td>
+           <td>{{ d.get(ck~'mongon_pct','—') }}%</td>
+          </tr>
+          {% endfor %}
+         </tbody>
+        </table>
+       </div>
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Шинэ баримт</span> <strong>{{ d.get('shine_barimt','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Тэтгэлэг авагч хүүхэд</span> <strong>{{ d.get('tetgleg_huukhed','—') }}</strong> (0-11: {{ d.get('tetgleg_0_11','—') }}, 11+: {{ d.get('tetgleg_11plus','—') }})</div>
+       </div>
+
+       {# Нэхэмжлэл #}
+       {% elif r.role == 'nekhemjlel' %}
+       <div class="row g-2 small">
+        <div class="col-12 fw-semibold text-muted">Тухайн 7 хоногт:</div>
+        <div class="col-auto"><span class="badge bg-secondary">Нийт нэхэмжлэл</span> <strong>{{ d.get('niit_nekhemjlel','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Эцэслэн шийдвэрлэсэн</span> <strong>{{ d.get('etsesen_shiydsersen','—') }}</strong></div>
+        <div class="col-12 fw-semibold text-muted mt-1">Хяналтад байгаа:</div>
+        <div class="col-auto"><span class="badge bg-dark">Нийт</span> <strong>{{ d.get('hyan_niit','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Дуудлага худалдаа</span> <strong>{{ d.get('hyan_duudlaga','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Үнэлгээ</span> <strong>{{ d.get('hyan_unelgee','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-dark">Хил</span> <strong>{{ d.get('hyan_hil','—') }}</strong></div>
+       </div>
+
+       {# Лавлагаа #}
+       {% elif r.role == 'lavlagaa_negtle' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Нийт лавлагаа</span> <strong>{{ d.get('lav_niit','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Цахим шуудан</span> <strong>{{ d.get('lav_tsakhim_shуudан','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Тулгаж хүргүүлсэн</span> <strong>{{ d.get('lav_tulgaj','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">Иргэнд хариу өгсөн</span> <strong>{{ d.get('lav_irgend','—') }}</strong></div>
+        {% if d.get('lav_tailbar') %}<div class="col-12 mt-1">{{ d.lav_tailbar }}</div>{% endif %}
+       </div>
+
+       {# Өргөдөл гомдол #}
+       {% elif r.role == 'orgodol_central' %}
+       <div class="row g-2 small">
+        <div class="col-auto"><span class="badge bg-secondary">Нийт ирсэн</span> <strong>{{ d.get('org_irsen_niit','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-success">Шийдвэрлэсэн</span> <strong>{{ d.get('org_shiydsersen_tot','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-warning text-dark">Хянагдаж байгаа</span> <strong>{{ d.get('org_khyanagdaj','—') }}</strong></div>
+        <div class="col-auto"><span class="badge bg-secondary">11-11</span> <strong>{{ d.get('g1111_avagch','—') }}+{{ d.get('g1111_toloгч','—') }}</strong></div>
+       </div>
+
+       {% endif %}
+
+       {# General text sections (shown for everyone) #}
+       {% if d.get('hiiseh_ajil') %}
+       <div class="mt-2 small">
+        <strong>Хийсэн ажил:</strong><br>
+        <div class="ps-2 text-secondary" style="white-space:pre-wrap">{{ d.hiiseh_ajil }}</div>
+       </div>
+       {% endif %}
+       {% if d.get('hiikh_ajil') %}
+       <div class="mt-1 small">
+        <strong>Хийх ажил:</strong><br>
+        <div class="ps-2 text-secondary" style="white-space:pre-wrap">{{ d.hiikh_ajil }}</div>
+       </div>
+       {% endif %}
+
+      </div>
+     </div>
+     {% endfor %}
+     {% endif %}
+    {% endfor %}
+
+   </div>
+  </div>
+ </div>
+</div>
+<style>
+@media print {
+  .navbar, .card-header select, button { display:none !important; }
+  .card { box-shadow:none !important; border:1px solid #ccc !important; }
+}
+</style>
+{% endblock %}

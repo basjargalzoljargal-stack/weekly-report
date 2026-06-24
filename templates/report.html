@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Тайлан — {{ user.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+ <div class="col-lg-9">
+  <div class="card">
+   <div class="card-header d-flex justify-content-between align-items-center">
+    <span>
+      <i class="bi bi-pencil-square me-2"></i>
+      {{ user.rank }} {{ user.name }}
+      <span class="badge bg-light text-dark ms-2" style="font-size:.75rem">{{ form_cfg.label }}</span>
+    </span>
+    <span class="text-white-50" style="font-size:.8rem">{{ fmt_week }}</span>
+   </div>
+   <div class="card-body">
+
+    {% if form_cfg.is_head %}
+    <div class="alert alert-info"><i class="bi bi-eye me-2"></i>
+      Та зөвхөн <strong>хяналт тавих</strong> эрхтэй.
+      <a href="/consolidated" class="alert-link">Нэгтгэсэн тайлан харах</a>
+    </div>
+    {% else %}
+
+    {% if submitted_at %}
+    <div class="alert alert-success py-2 mb-3">
+      <i class="bi bi-check-circle me-1"></i>
+      Илгээсэн: {{ submitted_at }}
+      {% if updated_at %} &nbsp;|&nbsp; Шинэчилсэн: {{ updated_at }}{% endif %}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+
+     {# ── Role-specific sections ────────────────────────────────────────── #}
+     {% for sec in form_cfg.sections %}
+      {% if sec.get('table') %}
+       {# ── Special table layout for medee_too ── #}
+       <div class="section-header">{{ sec.title }}</div>
+       {% if sec.get('note') %}<p class="text-muted small">{{ sec.note }}</p>{% endif %}
+       <div class="table-responsive mb-3">
+        <table class="table table-bordered table-sm align-middle">
+         <thead>
+          <tr>
+           <th style="min-width:160px">Ангилал</th>
+           {% for col in sec.cols %}
+           <th class="text-center" style="min-width:100px">{{ col.label }}<br><small class="text-muted">{{ col.unit }}</small></th>
+           {% endfor %}
+          </tr>
+         </thead>
+         <tbody>
+          {% for cat in sec.categories %}
+          {% set cat_key = cat | replace(' ','_') | lower %}
+          <tr>
+           <td class="fw-semibold">{{ cat }}</td>
+           {% for col in sec.cols %}
+           {% set fid = 'tbl_' ~ cat_key ~ '__' ~ col.id %}
+           <td>
+            <input type="number" class="form-control form-control-sm text-end"
+                   name="{{ fid }}" step="any" min="0"
+                   value="{{ data.get(fid, '') }}">
+           </td>
+           {% endfor %}
+          </tr>
+          {% endfor %}
+         </tbody>
+        </table>
+       </div>
+      {% else %}
+       {# ── Standard field layout ── #}
+       <div class="section-header">{{ sec.title }}</div>
+       {% if sec.get('note') %}<p class="text-muted small">{{ sec.note }}</p>{% endif %}
+       <div class="row g-3 mb-2">
+        {% for f in sec.fields %}
+        <div class="{{ 'col-12' if f.type in ('textarea',) else 'col-md-6 col-lg-4' }}">
+         <label class="form-label fw-semibold mb-1">{{ f.label }}
+           {% if f.get('unit') %}<span class="unit-label">({{ f.unit }})</span>{% endif %}
+         </label>
+         {% if f.type == 'textarea' %}
+          <textarea class="form-control" name="{{ f.id }}" rows="3"
+                    placeholder="...">{{ data.get(f.id, '') }}</textarea>
+         {% elif f.type == 'number' %}
+          <input type="number" class="form-control" name="{{ f.id }}"
+                 min="0" step="{{ f.get('step','1') }}"
+                 value="{{ data.get(f.id, '') }}">
+         {% elif f.type == 'percent' %}
+          <input type="number" class="form-control" name="{{ f.id }}"
+                 min="0" max="100" step="0.1"
+                 value="{{ data.get(f.id, '') }}">
+         {% endif %}
+        </div>
+        {% endfor %}
+       </div>
+      {% endif %}
+     {% endfor %}
+
+     {# ── General section for everyone ──────────────────────────────────── #}
+     <div class="section-header mt-4"><i class="bi bi-list-check me-1"></i>Ерөнхий тайлан</div>
+     <div class="row g-3">
+      <div class="col-12">
+       <label class="form-label fw-semibold">Энэ долоо хоногт хийсэн ажил</label>
+       <textarea class="form-control" name="hiiseh_ajil" rows="5"
+                 placeholder="7 хоногт хийсэн ажлаа бичнэ үү...">{{ data.get('hiiseh_ajil','') }}</textarea>
+      </div>
+      <div class="col-12">
+       <label class="form-label fw-semibold">Дараа долоо хоногт хийх ажил</label>
+       <textarea class="form-control" name="hiikh_ajil" rows="4"
+                 placeholder="Дараа 7 хоногт хийх ажлаа бичнэ үү...">{{ data.get('hiikh_ajil','') }}</textarea>
+      </div>
+      <div class="col-12">
+       <label class="form-label fw-semibold">Тэмдэглэл / санал, хүсэлт</label>
+       <textarea class="form-control" name="temdeglelтar" rows="2"
+                 placeholder="Нэмэлт тэмдэглэл...">{{ data.get('temdeglelтar','') }}</textarea>
+      </div>
+     </div>
+
+     <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-brand px-4">
+        <i class="bi bi-floppy me-1"></i>
+        {{ 'Шинэчлэх' if submitted_at else 'Илгээх' }}
+      </button>
+      <a href="/" class="btn btn-outline-secondary">Буцах</a>
+     </div>
+    </form>
+    {% endif %}
+
+   </div>
+  </div>
+ </div>
+</div>
+{% endblock %}
