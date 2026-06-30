@@ -866,10 +866,9 @@ async function submitReport(e){
   btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy me-1"></i>Хадгалах';
 }
 
-// ── Consolidated ────────────────────────────────────────
+// ── Consolidated ────────────────────────────────────────────
 async function loadConsolidated(){
   const sel=document.getElementById('week-selector');
-  // Populate last 8 weeks
   if(!sel.options.length){
     for(let i=0;i>=-19;i--){
       const w=weekDates(i);
@@ -880,7 +879,6 @@ async function loadConsolidated(){
     }
   }
   const selWeek=sel.value||weekDates().start;
-  const selWeekEnd=sel.options[sel.selectedIndex]?.textContent?.split('–')[1]?.trim()||'';
   document.getElementById('cons-week-label').textContent=sel.options[sel.selectedIndex]?.textContent||'';
   const body=document.getElementById('cons-body');
   body.innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
@@ -892,70 +890,145 @@ async function loadConsolidated(){
 
   const headDept=(loggedInUser&&loggedInUser.role==='head')?loggedInUser.department:null;
   const visibleDepts=headDept?[headDept]:DEPT_ORDER;
-  let html='<h6 class="fw-bold mb-3">Бөглөлтийн байдал</h6>';
+
+  // ── Submission status badges ──────────────────────────────
+  let html='<h6 class="fw-bold mb-2">Бөглөлтийн байдал</h6>';
   for(const dk of visibleDepts){
     const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
     if(!dus.length) continue;
-    html+=`<div class="mb-3"><div class="sec-head">${DEPT_NAMES[dk]}</div><div class="d-flex flex-wrap gap-2">`;
+    const dSub=dus.filter(u=>!!reps[u.id]).length;
+    html+=`<div class="mb-2"><span class="fw-semibold" style="font-size:.85rem">${DEPT_NAMES[dk]}:</span>
+      <span class="ms-2 badge bg-success">${dSub} илгээсэн</span>
+      <span class="ms-1 badge bg-danger">${dus.length-dSub} хүлээгдэж байна</span>
+      <span class="ms-2" style="font-size:.8rem">`;
     for(const u of dus){
       const done=!!reps[u.id];
-      html+=`<span class="badge ${done?'bg-success':'bg-danger'}">${u.rank} ${u.name} <i class="bi ${done?'bi-check':'bi-clock'}"></i></span>`;
+      html+=`<span class="badge ${done?'bg-success':'bg-danger'} me-1">${u.rank} ${u.name}</span>`;
     }
-    html+='</div></div>';
+    html+=`</span></div>`;
   }
-  html+='<hr>';
+  html+='<hr class="my-3">';
 
+  if(!Object.keys(reps).length){
+    html+='<div class="alert alert-info">Энэ 7 хоногт тайлан байхгүй байна.</div>';
+    body.innerHTML=html; return;
+  }
+
+  // ── Aggregated report per department ─────────────────────
   for(const dk of visibleDepts){
-    const dReps=Object.values(reps).filter(r=>r.department===dk);
+    const dUsers=allUsers.filter(u=>u.department===dk&&u.isActive);
+    const dReps=dUsers.map(u=>reps[u.id]).filter(Boolean);
     if(!dReps.length) continue;
-    html+=`<h5 class="mt-4 mb-3" style="color:var(--brand)"><i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}</h5>`;
+
+    html+=`<h5 class="mt-4 mb-3 fw-bold" style="color:var(--brand);border-bottom:2px solid var(--brand);padding-bottom:6px">
+      <i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}
+    </h5>`;
+
+    // Group submitted reports by role
+    const roleMap={};
     for(const r of dReps){
-      const d=r.data||{};
+      if(!roleMap[r.role]) roleMap[r.role]=[];
+      roleMap[r.role].push(r);
+    }
+
+    for(const [role, roleReps] of Object.entries(roleMap)){
+      const secs=ROLE_FORMS[role]||[];
+      const names=roleReps.map(r=>`${r.rank||''} ${r.userName||''}`).join(', ');
+
       html+=`<div class="card mb-3">
-        <div class="card-header py-2 d-flex justify-content-between" style="background:#f0f4ff;color:var(--brand)">
-          <span class="fw-semibold">${r.rank||''} ${r.userName||''}</span>
-          <span class="badge" style="background:var(--brand)">${ROLE_LABELS[r.role]||r.role||''}</span>
+        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background:#f0f4ff;color:var(--brand)">
+          <span class="fw-semibold">${ROLE_LABELS[role]||role}</span>
+          <span class="text-muted" style="font-size:.8rem">${names}</span>
         </div><div class="card-body pb-2">`;
-      const secs=ROLE_FORMS[r.role]||[];
+
+      // Numeric / table sections: aggregate across same-role members
       for(const sec of secs){
-        html+=`<div class="sec-head">${sec.t}</div>`;
         if(sec.table){
-          html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
-            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}</th>`).join('')}</tr></thead><tbody>`;
+          html+=`<div class="sec-head">${sec.t}</div>
+            <div class="table-responsive mb-2"><table class="table table-sm table-bordered">
+            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
           for(const cat of sec.cats){
             const ck='tbl_'+catKey(cat)+'__';
             html+=`<tr><td class="fw-semibold small">${cat}</td>`;
-            for(const col of sec.cols) html+=`<td class="text-center">${d[ck+col.id]||'—'}</td>`;
-            html+='</tr>';
+            for(const col of sec.cols){
+              const fid=ck+col.id;
+              let total=0;
+              for(const r of roleReps) total+=(parseFloat((r.data||{})[fid])||0);
+              html+=`<td class="text-center fw-semibold">${total?total.toLocaleString():'—'}</td>`;
+            }
+            html+=`</tr>`;
           }
-          html+='</tbody></table></div>';
+          html+=`</tbody></table></div>`;
         } else {
-          html+='<div class="row g-2 mb-2">';
-          for(const f of sec.f){
-            if(f.ta){
-              if(d[f.id]) html+=`<div class="col-12"><span class="fw-semibold small">${f.l}:</span> <span class="text-muted">${d[f.id]}</span></div>`;
-            } else {
+          const numFields=sec.f.filter(f=>!f.ta);
+          const txtFields=sec.f.filter(f=>f.ta);
+          if(numFields.length){
+            html+=`<div class="sec-head">${sec.t}</div><div class="row g-2 mb-2">`;
+            for(const f of numFields){
+              let total=0; let hasAny=false;
+              for(const r of roleReps){
+                const v=(r.data||{})[f.id];
+                if(v!==undefined&&v!==''){total+=parseFloat(v)||0;hasAny=true;}
+              }
               html+=`<div class="col-6 col-md-4 col-lg-3">
                 <div class="text-muted" style="font-size:.75rem">${f.l}</div>
-                <div class="fw-semibold">${d[f.id]!==undefined&&d[f.id]!==''?d[f.id]+' <span class="unit">'+f.u+'</span>':'—'}</div>
+                <div class="fw-bold fs-6">${hasAny?total.toLocaleString():'—'} <span class="unit">${f.u}</span></div>
               </div>`;
             }
+            html+=`</div>`;
           }
-          html+='</div>';
+          if(txtFields.length){
+            for(const f of txtFields){
+              const vals=roleReps.map(r=>{
+                const v=(r.data||{})[f.id];
+                return v?{name:`${r.rank||''} ${r.userName||''}`,text:v}:null;
+              }).filter(Boolean);
+              if(vals.length){
+                html+=`<div class="mb-2"><div class="fw-semibold small text-muted mb-1">${f.l}:</div>`;
+                for(const v of vals) html+=`<div class="ms-2 small mb-1"><strong>${v.name}:</strong> ${v.text}</div>`;
+                html+=`</div>`;
+              }
+            }
+          }
         }
       }
-      if(d.hiiseh_ajil||d.hiikh_ajil){
+
+      // General report (хийсэн/хийх ажил)
+      const hasGeneral=roleReps.some(r=>{const d=r.data||{};return d.hiiseh_ajil||d.hiikh_ajil;});
+      if(hasGeneral){
         html+=`<div class="sec-head">Ерөнхий тайлан</div>`;
-        if(d.hiiseh_ajil) html+=`<p class="small mb-1"><strong>Хийсэн ажил:</strong> ${d.hiiseh_ajil}</p>`;
-        if(d.hiikh_ajil) html+=`<p class="small mb-1"><strong>Хийх ажил:</strong> ${d.hiikh_ajil}</p>`;
-        if(d.temdegleltar) html+=`<p class="small mb-0"><strong>Тэмдэглэл:</strong> ${d.temdegleltar}</p>`;
+        for(const r of roleReps){
+          const d=r.data||{};
+          if(!d.hiiseh_ajil&&!d.hiikh_ajil) continue;
+          html+=`<div class="mb-2 p-2 rounded" style="background:#f8f9fa">
+            <div class="fw-semibold small mb-1">${r.rank||''} ${r.userName||''}:</div>`;
+          if(d.hiiseh_ajil) html+=`<div class="small"><span class="text-muted">Хийсэн:</span> ${d.hiiseh_ajil}</div>`;
+          if(d.hiikh_ajil) html+=`<div class="small"><span class="text-muted">Хийх:</span> ${d.hiikh_ajil}</div>`;
+          if(d.temdegleltar) html+=`<div class="small"><span class="text-muted">Тэмдэглэл:</span> ${d.temdegleltar}</div>`;
+          html+=`</div>`;
+        }
       }
-      html+='</div></div>';
+
+      html+=`</div></div>`;
+    }
+
+    // People with no role form (head, general roles)
+    const noFormReps=dReps.filter(r=>(!ROLE_FORMS[r.role]||!ROLE_FORMS[r.role].length));
+    for(const r of noFormReps){
+      const d=r.data||{};
+      if(!d.hiiseh_ajil&&!d.hiikh_ajil) continue;
+      html+=`<div class="card mb-2"><div class="card-body py-2">
+        <div class="fw-semibold">${r.rank||''} ${r.userName||''} <span class="badge ms-1" style="background:var(--brand);font-size:.7rem">${ROLE_LABELS[r.role]||r.role}</span></div>`;
+      if(d.hiiseh_ajil) html+=`<div class="small mt-1"><span class="text-muted">Хийсэн:</span> ${d.hiiseh_ajil}</div>`;
+      if(d.hiikh_ajil) html+=`<div class="small"><span class="text-muted">Хийх:</span> ${d.hiikh_ajil}</div>`;
+      if(d.temdegleltar) html+=`<div class="small"><span class="text-muted">Тэмдэглэл:</span> ${d.temdegleltar}</div>`;
+      html+=`</div></div>`;
     }
   }
-  if(!Object.keys(reps).length) html+='<div class="alert alert-info mt-3">Энэ 7 хоногт тайлан байхгүй байна.</div>';
+
   body.innerHTML=html;
 }
+
 
 // ── Admin ──────────────────────────────────────────────
 async function renderAdmin(){
