@@ -100,7 +100,7 @@ input[type=number]{max-width:170px}
     <div class="d-flex gap-2 ms-auto flex-wrap align-items-center">
       <span class="text-white-50 small" id="nav-username"></span>
       <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-house me-1"></i>Нүүр</button>
-      <button class="btn btn-sm btn-outline-light" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</button>
+      <button class="btn btn-sm btn-outline-light d-none" id="nav-consolidated-btn" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</button>
       <button class="btn btn-sm btn-outline-light d-none" id="nav-admin-btn" onclick="showView('admin')"><i class="bi bi-gear me-1"></i>Admin</button>
       <button class="btn btn-sm btn-outline-warning" onclick="doLogout()"><i class="bi bi-box-arrow-right me-1"></i>Гарах</button>
     </div>
@@ -584,6 +584,9 @@ async function enterApp(){
   document.getElementById('nav-username').textContent=loggedInUser.rank+' '+loggedInUser.name;
   if(isAdmin) document.getElementById('nav-admin-btn').classList.remove('d-none');
   else document.getElementById('nav-admin-btn').classList.add('d-none');
+  // Нэгтгэл товч: зөвхөн admin болон хэлтсийн дарга харна
+  const canSeeNegtle = isAdmin || loggedInUser.role==='head';
+  document.getElementById('nav-consolidated-btn').classList.toggle('d-none', !canSeeNegtle);
   if(isAdmin){ showView('admin'); return; }
   if(!currentWeek){ currentWeek=weekDates(); }
   currentUser=loggedInUser;
@@ -602,6 +605,8 @@ function doLogout(){
 }
 
 function showView(name){
+  // Нэгтгэл: зөвхөн admin эсвэл дарга
+  if(name==='consolidated' && !isAdmin && loggedInUser?.role!=='head') return;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   if(name==='home') renderHome();
