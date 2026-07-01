@@ -439,11 +439,11 @@ const ROLE_FORMS = {
   ],
   orgodol_central:[
     {t:'Нийт ирсэн өргөдөл, гомдол',f:[
-      {id:'org_niit',l:'Нийт ирсэн өргөдөл, гомдол',u:'ш'},
-      {id:'org_11_11',l:'— Засгийн газрын 11-11 төвөөс',u:'ш'},
-      {id:'org_shsgeg',l:'— Шүүхийн ШГ ерөнхий газраас',u:'ш'},
-      {id:'org_hzzdhya',l:'— Хуульзүй, дотоод хэргийн яамнаас',u:'ш'},
-      {id:'org_alba',l:'— Шийдвэр гүйцэтгэх албанд шууд',u:'ш'},
+      {id:'org_niit',l:'Нийт ирсэн өргөдөл, гомдол',u:'ш',prev:true},
+      {id:'org_11_11',l:'— Засгийн газрын 11-11 төвөөс',u:'ш',prev:true},
+      {id:'org_shsgeg',l:'— Шүүхийн ШГ ерөнхий газраас',u:'ш',prev:true},
+      {id:'org_hzzdhya',l:'— Хуульзүй, дотоод хэргийн яамнаас',u:'ш',prev:true},
+      {id:'org_alba',l:'— Шийдвэр гүйцэтгэх албанд шууд',u:'ш',prev:true},
     ]},
     {t:'7 хоногийн харьцуулалт',f:[
       {id:'org_ene_7hon',l:'Энэ 7 хоногт ирсэн',u:'ш'},
@@ -538,6 +538,21 @@ function computeMedeeSums(){
   set('ms-bi-too',fmt(biToo)); set('ms-bi-dun',fmtD(biDun));
   set('ms-bo-too',fmt(boToo)); set('ms-bo-dun',fmtD(boDun));
   set('ms-ul-too',fmt(ulToo)); set('ms-ul-dun',fmtD(ulDun));
+}
+
+function computePair(el){
+  var wrap=el.closest('.pct-pair');
+  if(!wrap) return;
+  var curr=parseFloat(wrap.querySelector('.curr-inp').value)||0;
+  var prev=parseFloat(wrap.querySelector('.prev-inp').value)||0;
+  var badge=wrap.querySelector('.pct-badge');
+  if(!badge) return;
+  if(!prev||!curr){badge.innerHTML='';return;}
+  var diff=((curr-prev)/prev*100);
+  var abs=Math.abs(diff).toFixed(1);
+  if(diff>0) badge.innerHTML=`<span class="badge" style="background:#198754;font-size:.72rem">↑ ${abs}%<br>өссөн</span>`;
+  else if(diff<0) badge.innerHTML=`<span class="badge" style="background:#dc3545;font-size:.72rem">↓ ${abs}%<br>буурсан</span>`;
+  else badge.innerHTML=`<span class="badge bg-secondary" style="font-size:.72rem">өөрчлөлтгүй</span>`;
 }
 
 function computeLavSums(){
@@ -1084,6 +1099,21 @@ function renderReportForm(){
           } else if(f.ta){
             html+=`<div class="col-12"><label class="form-label fw-semibold">${f.l}</label>
               <textarea class="form-control" name="${f.id}" rows="2">${d[f.id]||''}</textarea></div>`;
+          } else if(f.prev){
+            html+=`<div class="col-md-6">
+              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
+              <div class="d-flex align-items-end gap-2 pct-pair">
+                <div>
+                  <small class="text-muted d-block" style="font-size:.68rem">Энэ он</small>
+                  <input type="number" class="form-control curr-inp" name="${f.id}" step="1" min="0" value="${d[f.id]||''}" oninput="computePair(this)" style="width:110px">
+                </div>
+                <div>
+                  <small class="text-muted d-block" style="font-size:.68rem">Өмнөх он</small>
+                  <input type="number" class="form-control prev-inp" name="${f.id}_prev" step="1" min="0" value="${d[f.id+'_prev']||''}" oninput="computePair(this)" style="width:110px">
+                </div>
+                <div class="pct-badge mb-1" style="min-width:60px;text-align:center"></div>
+              </div>
+            </div>`;
           } else {
             html+=`<div class="col-md-6 col-lg-4">
               <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
@@ -1096,6 +1126,11 @@ function renderReportForm(){
     }
   }
   document.getElementById('report-fields').innerHTML=html;
+  // Init prev-year pair badges on load
+  document.querySelectorAll('.pct-pair').forEach(function(wrap){
+    var ci=wrap.querySelector('.curr-inp');
+    if(ci) computePair(ci);
+  });
   if(u.role==='lavlagaa_negtle'){
     computeLavSums();
     const lavTbl=document.getElementById('lav-table');
