@@ -373,7 +373,7 @@ const ROLE_FORMS = {
     {id:'hil_barags_dun',l:'Барагдуулсан мөнгөн дүн',u:'₮',s:'any'},
   ]}],
   medee_too:[
-    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,
+    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,medee_summary:true,
      cats:['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'],
      cols:[
       {id:'bieluu',l:'Биелүүлбэл зохих',stack:[
@@ -548,8 +548,8 @@ function computeMedeeSums(){
   var haritTxt=(!harit)?'—':(harit>0?'Өмнөх оноос '+harit+'% өссөн':'Өмнөх оноос '+Math.abs(harit)+'% буурсан');
   var haritColor=(!harit)?'rgba(255,255,255,.15)':(harit>0?'rgba(39,174,96,.5)':'rgba(192,57,43,.5)');
   set('ms-harit',haritTxt); setStyle('ms-harit','background',haritColor);
-  // shine input is embedded in card; ms-shine shows suffix text only
   var shineVal=parseFloat((document.querySelector('[name="shine_barimt"]')||{}).value)||0;
+  set('ms-shine-val',shineVal?shineVal.toLocaleString():'—');
   set('ms-shine',shineVal?'ИЛҮҮ ИРСЭН БАЙНА.':'');
 }
 
@@ -1003,7 +1003,44 @@ function renderReportForm(){
           html+='</tr>';
         }
         html+='</tbody></table></div>';
-        // medee_summary panel removed
+        if(sec.medee_summary){
+          html+=`<div style="background:linear-gradient(135deg,#1a2b4a,#0f1e35);border-radius:12px;padding:20px 18px 16px;margin-bottom:16px;color:#fff">
+            <div style="font-size:.65rem;letter-spacing:2px;opacity:.6;margin-bottom:2px">СТАТИСТИК МЭДЭЭ</div>
+            <div style="font-size:1rem;font-weight:700;letter-spacing:.5px;margin-bottom:14px;opacity:.9">НИЙТ ДҮН</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+              <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px 14px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:4px">ГҮЙЦЭТГЭВЭЛ ЗОХИХ</div>
+                <div id="ms-bi-too" style="font-size:1.5rem;font-weight:800">—</div>
+                <div id="ms-bi-dun" style="color:#f0b429;font-size:.8rem;font-weight:600;margin-top:2px">—</div>
+              </div>
+              <div style="background:#b8860b;border-radius:10px;padding:12px 14px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.85;margin-bottom:4px">ГҮЙЦЭТГЭСЭН</div>
+                <div id="ms-bo-too" style="font-size:1.5rem;font-weight:800">—</div>
+                <div id="ms-bo-dun" style="font-size:.8rem;font-weight:600;margin-top:2px">—</div>
+              </div>
+              <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px 14px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:4px">ҮЛДЭГДЭЛ</div>
+                <div id="ms-ul-too" style="font-size:1.5rem;font-weight:800">—</div>
+                <div id="ms-ul-dun" style="color:#f0b429;font-size:.8rem;font-weight:600;margin-top:2px">—</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:8px">НИЙТ ГББ БИЕЛЭЛТИЙН ХУВЬ</div>
+                <div style="display:flex;gap:18px;align-items:baseline">
+                  <div><span style="font-size:.65rem;opacity:.7">Г/Х</span><span id="ms-bo-pct" style="font-size:1.6rem;font-weight:800;margin-left:5px">—</span></div>
+                  <div><span style="font-size:.65rem;opacity:.7">М/Д</span><span id="ms-mo-pct" style="font-size:1.6rem;font-weight:800;margin-left:5px">—</span></div>
+                </div>
+                <div id="ms-harit" style="margin-top:8px;display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;background:rgba(255,255,255,.12)">—</div>
+              </div>
+              <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:8px">ШИНЭЭР ИРСЭН ГББ ӨМНӨХ ОНЫ МӨН ҮЕЭС</div>
+                <div id="ms-shine-val" style="font-size:1.6rem;font-weight:800;color:#f0b429">—</div>
+                <div id="ms-shine" style="font-size:.72rem;opacity:.85;margin-top:2px"></div>
+              </div>
+            </div>
+          </div>`;
+        }
         if(sec.lav_computed){
           html+=`<div class="row g-2 mb-3">
             <div class="col-md-4"><div class="card border-0" style="background:#eef4ff">
@@ -1061,6 +1098,9 @@ function renderReportForm(){
   }
   if(u.role==='medee_too'){
     computeMedeeSums();
+    document.getElementById('report-fields').addEventListener('input',function(e){
+      if(e.target.matches('input')) computeMedeeSums();
+    });
   }
 
   // Fill general fields
