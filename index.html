@@ -555,9 +555,7 @@ function dynRowHtml(l,n){
 function addDynRow(wrapId){
   var w=document.getElementById(wrapId);
   var rd=w.querySelector('.dyn-rows');
-  var d2=document.createElement('div');
-  d2.innerHTML=dynRowHtml('','');
-  rd.appendChild(d2.firstElementChild);
+  if(rd) rd.insertAdjacentHTML('beforeend',dynRowHtml('',''));
 }
 
 function computeLavSums(){
