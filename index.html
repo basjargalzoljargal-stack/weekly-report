@@ -450,7 +450,14 @@ const ROLE_FORMS = {
       {id:'org_omno_7hon',l:'Өмнөх 7 хоногт ирсэн',u:'ш'},
     ]},
     {t:'Өргөдлийн агуулгаар ангилал',f:[
-      {id:'org_ang',l:'Агуулгаар ангилал',dyn:true},
+      {id:'org_ang',l:'Агуулгаар ангилал',dyn:true,defaults:[
+        {l:'ШГА эрчимжүүлэх',n:''},
+        {l:'ШГА-г хүчингүй болгох',n:''},
+        {l:'Хүүхдийн тэтгэлэгтэй холбоотой',n:''},
+        {l:'Хилийн хоригтой холбоотой',n:''},
+        {l:'АДХ-г хүчингүй болгуулах',n:''},
+        {l:'Бусад',n:''},
+      ]},
     ]},
     {t:'Хүлээн авсан өргөдөл, гомдол',f:[
       {id:'org_huvaan_niit',l:'Хүлээн авсан нийт',u:'ш'},
@@ -1117,7 +1124,7 @@ function renderReportForm(){
           } else if(f.dyn){
             let saved=[];
             try{if(d[f.id]) saved=JSON.parse(d[f.id]);}catch(e){}
-            if(!saved.length) saved=[{l:'',n:''}];
+            if(!saved.length) saved=f.defaults||[{l:'',n:''}];
             html+=`<div class="col-12">
               <label class="form-label fw-semibold">${f.l}</label>
               <div id="dyn_${f.id}">
