@@ -373,7 +373,7 @@ const ROLE_FORMS = {
     {id:'hil_barags_dun',l:'Барагдуулсан мөнгөн дүн',u:'₮',s:'any'},
   ]}],
   medee_too:[
-    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,medee_summary:true,cat_haritsuulalt:true,
+    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,
      cats:['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'],
      cols:[
       {id:'bieluu',l:'Биелүүлбэл зохих',stack:[
@@ -383,15 +383,19 @@ const ROLE_FORMS = {
       {id:'bodit',l:'Бодитой биелүүлсэн',stack:[
         {id:'bodit_too',u:'ш'},
         {id:'bodit_dun',u:'₮'},
-        {id:'bodit_pct',u:'%',l:'Бодит биелэлт'},
-        {id:'mongon_pct',u:'%',l:'Мөнгөн биелэлт'},
       ]},
       {id:'uldegdel',l:'Үлдэгдэл',stack:[
         {id:'uldegdel_too',u:'ш'},
         {id:'uldegdel_dun',u:'₮'},
       ]},
+      {id:'bielelt_pct',l:'Биелэлтийн хувь',stack:[
+        {id:'bodit_pct',u:'%',l:'Бодит'},
+        {id:'mongon_pct',u:'%',l:'Мөнгөн'},
+        {id:'umnuh_haritsuulalt',u:'%',l:'Өмнөх оны',s:'0.1',allowNeg:true},
+      ]},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
+      {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
       {id:'tetgleg_huukhed',l:'Тэтгэлэг авагч хүүхдийн нийт тоо',u:'хүүхэд'},
       {id:'tetgleg_0_11',l:'0-11 насны хүүхэд',u:'хүүхэд'},
       {id:'tetgleg_11plus',l:'11+ насны хүүхэд',u:'хүүхэд'},
@@ -972,15 +976,7 @@ function renderReportForm(){
           <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:120px">${c.l}${c.stack?'':('<br><small class="text-muted">'+c.u+'</small>')}</th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
-          const haritFid=ck+'umnuh_haritsuulalt';
-          const haritInput=sec.cat_haritsuulalt
-            ?`<div class="mt-1 d-flex align-items-center gap-1">
-                <small class="text-muted" style="font-size:.65rem;white-space:nowrap">Өмнөх оны:</small>
-                <input type="number" class="form-control tbl-input form-control-sm" style="width:65px;font-size:.78rem;padding:2px 4px" name="${haritFid}" step="0.1" oninput="computeMedeeSums()" value="${d[haritFid]||''}">
-                <small class="text-muted" style="font-size:.65rem">%</small>
-              </div>`
-            :'';
-          html+=`<tr><td class="fw-semibold small">${cat}${haritInput}</td>`;
+          html+=`<tr><td class="fw-semibold small">${cat}</td>`;
           for(const col of sec.cols){
             const lavEvt=sec.lav_computed?' oninput="computeLavSums()"':'';
             const meeEvt=sec.medee_summary?' oninput="computeMedeeSums()"':'';
@@ -1007,63 +1003,7 @@ function renderReportForm(){
           html+='</tr>';
         }
         html+='</tbody></table></div>';
-        if(sec.medee_summary){
-          html+=`<div class="rounded-3 p-3 mb-3" style="background:#1a3a6b;color:#fff">
-            <div class="fw-bold mb-2" style="font-size:.8rem;letter-spacing:.5px;opacity:.7">НЭГДСЭН МЭДЭЭНИЙ ДҮНГИЙН ХУРААНГУЙ</div>
-            <div class="row g-2 mb-2">
-              <div class="col-md-4">
-                <div class="rounded-2 p-2" style="background:rgba(255,255,255,.1)">
-                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">БИЕЛҮҮЛБЭЛ ЗОХИХ</div>
-                  <div class="fw-bold fs-5" id="ms-bi-too">—</div>
-                  <div style="font-size:.75rem;opacity:.8" id="ms-bi-dun">—</div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="rounded-2 p-2" style="background:#c9a227">
-                  <div style="font-size:.7rem;opacity:.85;letter-spacing:.3px">БОДИТОЙ БИЕЛҮҮЛСЭН</div>
-                  <div class="fw-bold fs-5" id="ms-bo-too">—</div>
-                  <div style="font-size:.75rem;opacity:.9" id="ms-bo-dun">—</div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="rounded-2 p-2" style="background:rgba(255,255,255,.1)">
-                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">ҮЛДЭГДЭЛ</div>
-                  <div class="fw-bold fs-5" id="ms-ul-too">—</div>
-                  <div style="font-size:.75rem;opacity:.8" id="ms-ul-dun">—</div>
-                </div>
-              </div>
-            </div>
-            <div class="row g-2">
-              <div class="col-md-4">
-                <div class="rounded-2 p-2" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">НИЙТ ГББ БИЕЛЭЛТИЙН ХУВЬ</div>
-                  <div class="d-flex gap-4 mt-2">
-                    <div>
-                      <div style="font-size:.65rem;opacity:.6;letter-spacing:.3px">Г/Х</div>
-                      <div class="fw-bold fs-5" id="ms-bo-pct">—</div>
-                    </div>
-                    <div>
-                      <div style="font-size:.65rem;opacity:.6;letter-spacing:.3px">М/Д</div>
-                      <div class="fw-bold fs-5" id="ms-mo-pct">—</div>
-                    </div>
-                  </div>
-                  <div class="mt-2 rounded-pill px-2 py-1 text-center fw-semibold" style="font-size:.72rem;background:rgba(255,255,255,.15)" id="ms-harit">—</div>
-                </div>
-              </div>
-              <div class="col-md-8">
-                <div class="rounded-2 p-2 h-100" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">ШИНЭ ИРСЭН ГҮЙЦЭТГЭХ БАРИМТ БИЧИГ ӨМНӨХ ОНЫ МӨН ҮЕЭС</div>
-                  <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
-                    <input type="number" name="shine_barimt" min="0" oninput="computeMedeeSums()"
-                      value="${d['shine_barimt']||''}"
-                      style="width:140px;background:rgba(255,255,255,.15);color:#f0c040;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 8px;font-size:1.2rem;font-weight:700">
-                    <span style="color:#f0c040;font-weight:600" id="ms-shine">ИЛҮҮ ИРСЭН БАЙНА.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>`;
-        }
+        // medee_summary panel removed
         if(sec.lav_computed){
           html+=`<div class="row g-2 mb-3">
             <div class="col-md-4"><div class="card border-0" style="background:#eef4ff">
