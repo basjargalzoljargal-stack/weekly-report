@@ -384,6 +384,8 @@ const ROLE_FORMS = {
       {id:'uldegdel_dun',l:'Үлдэгдэл дүн',u:'₮'},
       {id:'bodit_pct',l:'Бодит биелэлт',u:'%'},
       {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
+      {id:'umnuh_too',l:'Өмнөх оны мөн үеийн тоо',u:'ш'},
+      {id:'umnuh_dun',l:'Өмнөх оны мөн үеийн дүн',u:'₮'},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
       {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
@@ -418,13 +420,17 @@ const ROLE_FORMS = {
       {id:'oss_etsesen',l:'Эцэслэн шийдвэрлэсэн',u:'ш'},
     ]},
   ],
-  lavlagaa_negtle:[{t:'Лавлагаа олгосон',f:[
-    {id:'lav_niit',l:'Нийт олгосон лавлагаа',u:'ш'},
-    {id:'lav_tsakhim',l:'Цахим шуудангаар ирсэн хүсэлт',u:'ш'},
-    {id:'lav_tulgaj',l:'Цахим сантай тулгаж хүргүүлсэн',u:'ш'},
-    {id:'lav_irgend',l:'Иргэнд цахимаас шалгаж хариу өгсөн',u:'ш'},
-    {id:'lav_tailbar',l:'Нэмэлт тайлбар',u:'',ta:true},
-  ]}],
+  lavlagaa_negtle:[
+    {t:'Лавлагааны задаргаа',table:true,lav_computed:true,
+     cats:['Нэг цэг','Орон нутаг','Арилжааны банк','Төрийн эрх бүхий байгууллага','Хүсэлт'],
+     cols:[
+       {id:'irgen',l:'Иргэн',u:'ш'},
+       {id:'huuliin_etgeed',l:'Хуулийн этгээд',u:'ш'},
+     ]},
+    {t:'Нэмэлт тайлбар',f:[
+      {id:'lav_tailbar',l:'Нэмэлт тайлбар',u:'',ta:true},
+    ]},
+  ],
   orgodol_central:[
     {t:'Нийт ирсэн өргөдөл, гомдол',f:[
       {id:'org_niit',l:'Нийт ирсэн өргөдөл, гомдол',u:'ш'},
@@ -507,6 +513,19 @@ function toast(msg,ok=true){
   setTimeout(()=>el.remove(),3500);
 }
 function catKey(cat){return cat.replace(/[\s,]/g,'_').toLowerCase();}
+
+function computeLavSums(){
+  const getV=n=>{const el=document.querySelector(`[name="${n}"]`);return el?parseFloat(el.value)||0:0;};
+  const ck=c=>'tbl_'+catKey(c)+'__';
+  const nonBank=['Нэг цэг','Орон нутаг','Төрийн эрх бүхий байгууллага','Хүсэлт'];
+  const c1=nonBank.reduce((s,c)=>s+getV(ck(c)+'irgen')+getV(ck(c)+'huuliin_etgeed'),0);
+  const c2=getV(ck('Арилжааны банк')+'irgen')+getV(ck('Арилжааны банк')+'huuliin_etgeed');
+  const c3=c1+c2;
+  const el=document.getElementById('lav-c1'); if(!el) return;
+  el.textContent=c1?c1+' ш':'—';
+  document.getElementById('lav-c2').textContent=c2?c2+' ш':'—';
+  document.getElementById('lav-c3').textContent=c3?c3+' ш':'—';
+}
 
 // ── 31 нэгжийн жагсаалт ─────────────────────────────────
 const NEGJ_GROUPS=[
@@ -902,7 +921,8 @@ function renderReportForm(){
       html+=`<div class="sec-head">${sec.t}</div>`;
       if(sec.note) html+=`<p class="text-muted small">${sec.note}</p>`;
       if(sec.table){
-        html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
+        const onInp=sec.lav_computed?' oninput="computeLavSums()"':'';
+        html+=`<div class="table-responsive mb-2"${onInp}><table class="table table-sm table-bordered">
           <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:95px">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
@@ -914,6 +934,25 @@ function renderReportForm(){
           html+='</tr>';
         }
         html+='</tbody></table></div>';
+        if(sec.lav_computed){
+          html+=`<div class="row g-2 mb-3">
+            <div class="col-md-4"><div class="card border-0" style="background:#eef4ff">
+              <div class="card-body py-2 px-3">
+                <div class="text-muted" style="font-size:.72rem">Шүүхийн шийдвэрийн тодорхойлолт, лавлагаа олгосон</div>
+                <div class="fw-bold fs-5" id="lav-c1">—</div>
+            </div></div></div>
+            <div class="col-md-4"><div class="card border-0" style="background:#efffef">
+              <div class="card-body py-2 px-3">
+                <div class="text-muted" style="font-size:.72rem">Арилжааны банкаар цахим сантай тулгаж хүргүүлсэн</div>
+                <div class="fw-bold fs-5" id="lav-c2">—</div>
+            </div></div></div>
+            <div class="col-md-4"><div class="card border-0" style="background:#fff8e1">
+              <div class="card-body py-2 px-3">
+                <div class="text-muted" style="font-size:.72rem">Нийт олгосон лавлагааны тоо</div>
+                <div class="fw-bold fs-4" id="lav-c3">—</div>
+            </div></div></div>
+          </div>`;
+        }
       } else {
         html+='<div class="row g-3 mb-1">';
         for(const f of sec.f){
@@ -945,6 +984,7 @@ function renderReportForm(){
     }
   }
   document.getElementById('report-fields').innerHTML=html;
+  if(u.role==='lavlagaa_negtle') computeLavSums();
 
   // Fill general fields
   document.getElementById('f-hiiseh').value=d.hiiseh_ajil||'';
@@ -1081,6 +1121,18 @@ async function loadConsolidated(){
             html+=`</tr>`;
           }
           html+=`</tbody></table></div>`;
+          if(sec.lav_computed){
+            const getT=(cat,col)=>{const fid='tbl_'+catKey(cat)+'__'+col;return roleReps.reduce((s,r)=>s+(parseFloat((r.data||{})[fid])||0),0);};
+            const nonBank=['Нэг цэг','Орон нутаг','Төрийн эрх бүхий байгууллага','Хүсэлт'];
+            const c1=nonBank.reduce((s,c)=>s+getT(c,'irgen')+getT(c,'huuliin_etgeed'),0);
+            const c2=getT('Арилжааны банк','irgen')+getT('Арилжааны банк','huuliin_etgeed');
+            const c3=c1+c2;
+            html+=`<div class="row g-2 mb-2">
+              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Шүүхийн шийдвэрийн тодорхойлолт, лавлагаа олгосон</div><div class="fw-bold">${c1||'—'} ш</div></div>
+              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Арилжааны банкаар тулгаж хүргүүлсэн</div><div class="fw-bold">${c2||'—'} ш</div></div>
+              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Нийт олгосон лавлагааны тоо</div><div class="fw-bold fs-6">${c3||'—'} ш</div></div>
+            </div>`;
+          }
         } else {
           const numFields=sec.f.filter(f=>!f.ta&&!f.negj);
           const txtFields=sec.f.filter(f=>f.ta);
