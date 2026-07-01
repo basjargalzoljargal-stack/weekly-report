@@ -24,7 +24,13 @@ input[type=number]{max-width:170px}
 .unit{color:#6c757d;font-size:.78rem;margin-left:3px}
 .view{display:none}.view.active{display:block}
 .spinner-wrap{display:flex;align-items:center;justify-content:center;min-height:200px}
-.tbl-input{width:110px;font-size:.82rem;padding:3px 6px}
+.tbl-input{width:110px;font-size:.82rem;padding:3px 6px;
+           background:#fffde7;border:1.5px solid #aab4c8!important;border-radius:5px}
+.tbl-input:focus{background:#fff;border-color:var(--brand2)!important;
+                 box-shadow:0 0 0 3px rgba(37,99,176,.15)!important;outline:none}
+.form-control[type=number]{background:#f7f9ff;border:1.5px solid #aab4c8;border-radius:6px}
+.form-control[type=number]:focus{background:#fff;border-color:var(--brand2);
+                                  box-shadow:0 0 0 3px rgba(37,99,176,.15)}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0f2f5}
 .login-card{width:100%;max-width:400px;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.13)}
 .login-header{background:var(--brand);color:#fff;border-radius:14px 14px 0 0;padding:28px 24px 20px;text-align:center}
@@ -330,9 +336,14 @@ const ROLE_FORMS = {
        {id:'undsgui_avagch',l:'Үндэслэлгүй — авагчаас',u:'ш'},
        {id:'undsgui_toloch',l:'Үндэслэлгүй — төлөгчөөс',u:'ш'},
      ]},
-    {t:'Хяналтын үйл ажиллагаа',f:[
+    {t:'Материал татаж хяналт',f:[
       {id:'material_hyanasan',l:'Материал татаж хянасан',u:'ш'},
-      {id:'alban_daalg',l:'Албан даалгавар хүргүүлсэн',u:'ш'},
+    ]},
+    {t:'Албан даалгавар',f:[
+      {id:'daalg_khuleen',l:'Хүлээн авч хянасан',u:'ш'},
+      {id:'daalg_hurgelsen',l:'Хүргүүлсэн',u:'ш'},
+      {id:'daalg_butsaasan',l:'Буцаасан',u:'ш'},
+      {id:'daalg_shiljuulsen',l:'Харьяаллын дагуу шилжүүлсэн (зөвхөн харьяалал хариуцсан)',u:'ш'},
     ]},
     {t:'Тэмдэглэл',f:[
       {id:'uurg_yavuulsan',l:'Явуулсан үүрэг',u:'',ta:true},
