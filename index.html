@@ -384,8 +384,7 @@ const ROLE_FORMS = {
       {id:'uldegdel_dun',l:'Үлдэгдэл дүн',u:'₮'},
       {id:'bodit_pct',l:'Бодит биелэлт',u:'%'},
       {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
-      {id:'umnuh_ossun',l:'Өмнөх оны мөн үеэс өссөн',u:'%'},
-      {id:'umnuh_uursan',l:'Өмнөх оны мөн үеэс буурсан',u:'%'},
+      {id:'umnuh_haritsuulalt',l:'Өмнөх оны мөн үетэй харьцуулбал (+өссөн / −буурсан)',u:'%',s:'0.1',allowNeg:true},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
       {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
@@ -938,7 +937,9 @@ function renderReportForm(){
           for(const col of sec.cols){
             const fid=ck+col.id;
             const lavEvt=sec.lav_computed?' oninput="computeLavSums()"':'';
-            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}"${lavEvt} step="any" min="0" value="${d[fid]||''}"></td>`;
+            const minAttr=col.allowNeg?'':' min="0"';
+            const stepAttr=col.s?` step="${col.s}"`:'step="any"';
+            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}"${lavEvt} ${stepAttr}${minAttr} value="${d[fid]||''}"></td>`;
           }
           html+='</tr>';
         }
