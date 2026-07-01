@@ -515,14 +515,15 @@ function toast(msg,ok=true){
 function catKey(cat){return cat.replace(/[\s,]/g,'_').toLowerCase();}
 
 function computeLavSums(){
-  const getV=n=>{const el=document.querySelector(`[name="${n}"]`);return el?parseFloat(el.value)||0:0;};
-  const ck=c=>'tbl_'+catKey(c)+'__';
-  const nonBank=['Нэг цэг','Орон нутаг','Төрийн эрх бүхий байгууллага','Хүсэлт'];
-  const c1=nonBank.reduce((s,c)=>s+getV(ck(c)+'irgen')+getV(ck(c)+'huuliin_etgeed'),0);
-  const c2=getV(ck('Арилжааны банк')+'irgen')+getV(ck('Арилжааны банк')+'huuliin_etgeed');
+  const c1el=document.getElementById('lav-c1'); if(!c1el) return;
+  const tbl=document.getElementById('lav-table'); if(!tbl) return;
+  // rows: 0=Нэг цэг, 1=Орон нутаг, 2=Арилжааны банк, 3=Төрийн эрх бүхий байгуулла, 4=Хүсэлт
+  const rows=[...tbl.querySelectorAll('tbody tr')];
+  const rowSum=i=>(rows[i]?[...rows[i].querySelectorAll('input[type=number]')].reduce((s,inp)=>s+(parseFloat(inp.value)||0),0):0);
+  const c1=rowSum(0)+rowSum(1)+rowSum(3)+rowSum(4); // банкнаас бусад
+  const c2=rowSum(2);                                // Арилжааны банк
   const c3=c1+c2;
-  const el=document.getElementById('lav-c1'); if(!el) return;
-  el.textContent=c1?c1+' ш':'—';
+  c1el.textContent=c1?c1+' ш':'—';
   document.getElementById('lav-c2').textContent=c2?c2+' ш':'—';
   document.getElementById('lav-c3').textContent=c3?c3+' ш':'—';
 }
@@ -921,7 +922,8 @@ function renderReportForm(){
       html+=`<div class="sec-head">${sec.t}</div>`;
       if(sec.note) html+=`<p class="text-muted small">${sec.note}</p>`;
       if(sec.table){
-        html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
+        const tblId=sec.lav_computed?'id="lav-table" ':'';
+        html+=`<div class="table-responsive mb-2"><table ${tblId}class="table table-sm table-bordered">
           <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:95px">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
