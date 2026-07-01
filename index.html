@@ -384,15 +384,14 @@ const ROLE_FORMS = {
         {id:'bodit_too',u:'ш'},
         {id:'bodit_dun',u:'₮'},
         {id:'bodit_pct',u:'%',l:'Бодит биелэлт'},
+        {id:'mongon_pct',u:'%',l:'Мөнгөн биелэлт'},
       ]},
       {id:'uldegdel',l:'Үлдэгдэл',stack:[
         {id:'uldegdel_too',u:'ш'},
         {id:'uldegdel_dun',u:'₮'},
       ]},
-      {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
-      {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
       {id:'tetgleg_huukhed',l:'Тэтгэлэг авагч хүүхдийн нийт тоо',u:'хүүхэд'},
       {id:'tetgleg_0_11',l:'0-11 насны хүүхэд',u:'хүүхэд'},
       {id:'tetgleg_11plus',l:'11+ насны хүүхэд',u:'хүүхэд'},
@@ -536,14 +535,18 @@ function computeMedeeSums(){
     return n.toLocaleString();
   }
   function set(id,val){var e=document.getElementById(id);if(e)e.textContent=val;}
+  function setStyle(id,prop,val){var e=document.getElementById(id);if(e)e.style[prop]=val;}
   set('ms-bi-too',fmt(biToo)); set('ms-bi-dun',fmtD(biDun));
-  set('ms-bo-too',fmt(boToo));
-  set('ms-bo-dun',boDun?(fmtD(boDun)+(boPct?' · Бодит '+boPct+'%':'')):'—');
+  set('ms-bo-too',fmt(boToo)); set('ms-bo-dun',fmtD(boDun));
   set('ms-ul-too',fmt(ulToo)); set('ms-ul-dun',fmtD(ulDun));
+  set('ms-bo-pct',boPct?boPct+'%':'—');
   set('ms-mo-pct',moPct?moPct+'%':'—');
   var haritTxt=(!harit)?'—':(harit>0?'Өмнөх оноос '+harit+'% өссөн':'Өмнөх оноос '+Math.abs(harit)+'% буурсан');
-  set('ms-harit',haritTxt);
-  set('ms-shine',shine?fmt(shine)+' ш':'—');
+  var haritColor=(!harit)?'rgba(255,255,255,.15)':(harit>0?'rgba(39,174,96,.5)':'rgba(192,57,43,.5)');
+  set('ms-harit',haritTxt); setStyle('ms-harit','background',haritColor);
+  // shine input is embedded in card; ms-shine shows suffix text only
+  var shineVal=parseFloat((document.querySelector('[name="shine_barimt"]')||{}).value)||0;
+  set('ms-shine',shineVal?'ИЛҮҮ ИРСЭН БАЙНА.':'');
 }
 
 function computeLavSums(){
@@ -1033,15 +1036,29 @@ function renderReportForm(){
             <div class="row g-2">
               <div class="col-md-4">
                 <div class="rounded-2 p-2" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7">МӨНГӨН БИЕЛЭЛТ / НЭГДСЭН МЭДЭЭ</div>
-                  <div class="fw-bold mt-1" id="ms-mo-pct">—</div>
-                  <div class="mt-1" style="font-size:.72rem;opacity:.8" id="ms-harit">—</div>
+                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">НИЙТ ГББ БИЕЛЭЛТИЙН ХУВЬ</div>
+                  <div class="d-flex gap-4 mt-2">
+                    <div>
+                      <div style="font-size:.65rem;opacity:.6;letter-spacing:.3px">Г/Х</div>
+                      <div class="fw-bold fs-5" id="ms-bo-pct">—</div>
+                    </div>
+                    <div>
+                      <div style="font-size:.65rem;opacity:.6;letter-spacing:.3px">М/Д</div>
+                      <div class="fw-bold fs-5" id="ms-mo-pct">—</div>
+                    </div>
+                  </div>
+                  <div class="mt-2 rounded-pill px-2 py-1 text-center fw-semibold" style="font-size:.72rem;background:rgba(255,255,255,.15)" id="ms-harit">—</div>
                 </div>
               </div>
               <div class="col-md-8">
                 <div class="rounded-2 p-2 h-100" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7">ШҮҮХЭЭС ШИНЭЭР НЭМЭГДСЭН БАРИМТ БИЧИГ</div>
-                  <div class="fw-bold fs-5 mt-1" style="color:#f0c040" id="ms-shine">—</div>
+                  <div style="font-size:.7rem;opacity:.7;letter-spacing:.3px">ШИНЭ ИРСЭН ГҮЙЦЭТГЭХ БАРИМТ БИЧИГ ӨМНӨХ ОНЫ МӨН ҮЕЭС</div>
+                  <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                    <input type="number" name="shine_barimt" min="0" oninput="computeMedeeSums()"
+                      value="${d['shine_barimt']||''}"
+                      style="width:140px;background:rgba(255,255,255,.15);color:#f0c040;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 8px;font-size:1.2rem;font-weight:700">
+                    <span style="color:#f0c040;font-weight:600" id="ms-shine">ИЛҮҮ ИРСЭН БАЙНА.</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1104,9 +1121,6 @@ function renderReportForm(){
   }
   if(u.role==='medee_too'){
     computeMedeeSums();
-    // Also listen on shine_barimt which is in a separate section
-    const shineEl=document.querySelector('[name="shine_barimt"]');
-    if(shineEl) shineEl.addEventListener('input', computeMedeeSums);
   }
 
   // Fill general fields
