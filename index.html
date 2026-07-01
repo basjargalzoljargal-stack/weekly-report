@@ -373,7 +373,7 @@ const ROLE_FORMS = {
     {id:'hil_barags_dun',l:'Барагдуулсан мөнгөн дүн',u:'₮',s:'any'},
   ]}],
   medee_too:[
-    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,medee_summary:true,
+    {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,medee_summary:true,cat_haritsuulalt:true,
      cats:['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'],
      cols:[
       {id:'bieluu',l:'Биелүүлбэл зохих',stack:[
@@ -384,7 +384,6 @@ const ROLE_FORMS = {
         {id:'bodit_too',u:'ш'},
         {id:'bodit_dun',u:'₮'},
         {id:'bodit_pct',u:'%',l:'Бодит биелэлт'},
-        {id:'umnuh_haritsuulalt',u:'%',l:'Өмнөх оны харьцуулалт',s:'0.1',allowNeg:true},
       ]},
       {id:'uldegdel',l:'Үлдэгдэл',stack:[
         {id:'uldegdel_too',u:'ш'},
@@ -526,7 +525,7 @@ function computeMedeeSums(){
   var boToo=v(p+'bodit_too'),boDun=v(p+'bodit_dun');
   var ulToo=v(p+'uldegdel_too'),ulDun=v(p+'uldegdel_dun');
   var boPct=v(p+'bodit_pct'),moPct=v(p+'mongon_pct');
-  var harit=v(p+'umnuh_haritsuulalt');
+  var harit=v(p+'umnuh_haritsuulalt'); // Нэгдсэн мэдээ мөрийн харьцуулалт
   var shine=v('shine_barimt');
   function fmt(n){return n?n.toLocaleString('mn-MN'):'—';}
   function fmtD(n){
@@ -538,12 +537,13 @@ function computeMedeeSums(){
   }
   function set(id,val){var e=document.getElementById(id);if(e)e.textContent=val;}
   set('ms-bi-too',fmt(biToo)); set('ms-bi-dun',fmtD(biDun));
-  set('ms-bo-too',fmt(boToo)); set('ms-bo-dun',fmtD(boDun));
+  set('ms-bo-too',fmt(boToo));
+  set('ms-bo-dun',boDun?(fmtD(boDun)+(boPct?' · Бодит '+boPct+'%':'')):'—');
   set('ms-ul-too',fmt(ulToo)); set('ms-ul-dun',fmtD(ulDun));
-  set('ms-bo-pct',boPct?boPct+'%':'—'); set('ms-mo-pct',moPct?moPct+'%':'—');
-  var haritTxt=harit===0?'—':(harit>0?'Өмнөх оноос '+harit+'% өссөн':'Өмнөх оноос '+Math.abs(harit)+'% буурсан');
+  set('ms-mo-pct',moPct?moPct+'%':'—');
+  var haritTxt=(!harit)?'—':(harit>0?'Өмнөх оноос '+harit+'% өссөн':'Өмнөх оноос '+Math.abs(harit)+'% буурсан');
   set('ms-harit',haritTxt);
-  set('ms-shine',shine?fmt(shine)+' илүү ирсэн байна':'—');
+  set('ms-shine',shine?fmt(shine)+' ш':'—');
 }
 
 function computeLavSums(){
@@ -969,7 +969,15 @@ function renderReportForm(){
           <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:120px">${c.l}${c.stack?'':('<br><small class="text-muted">'+c.u+'</small>')}</th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
-          html+=`<tr><td class="fw-semibold small">${cat}</td>`;
+          const haritFid=ck+'umnuh_haritsuulalt';
+          const haritInput=sec.cat_haritsuulalt
+            ?`<div class="mt-1 d-flex align-items-center gap-1">
+                <small class="text-muted" style="font-size:.65rem;white-space:nowrap">Өмнөх оны:</small>
+                <input type="number" class="form-control tbl-input form-control-sm" style="width:65px;font-size:.78rem;padding:2px 4px" name="${haritFid}" step="0.1" oninput="computeMedeeSums()" value="${d[haritFid]||''}">
+                <small class="text-muted" style="font-size:.65rem">%</small>
+              </div>`
+            :'';
+          html+=`<tr><td class="fw-semibold small">${cat}${haritInput}</td>`;
           for(const col of sec.cols){
             const lavEvt=sec.lav_computed?' oninput="computeLavSums()"':'';
             const meeEvt=sec.medee_summary?' oninput="computeMedeeSums()"':'';
@@ -1025,17 +1033,14 @@ function renderReportForm(){
             <div class="row g-2">
               <div class="col-md-4">
                 <div class="rounded-2 p-2" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7">НИЙТ ГББ БИЕЛЭЛТИЙН ХУВЬ</div>
-                  <div class="d-flex gap-3 mt-1">
-                    <div><div style="font-size:.65rem;opacity:.6">Г/Х</div><div class="fw-bold" id="ms-bo-pct">—</div></div>
-                    <div><div style="font-size:.65rem;opacity:.6">М/Д</div><div class="fw-bold" id="ms-mo-pct">—</div></div>
-                  </div>
+                  <div style="font-size:.7rem;opacity:.7">МӨНГӨН БИЕЛЭЛТ / НЭГДСЭН МЭДЭЭ</div>
+                  <div class="fw-bold mt-1" id="ms-mo-pct">—</div>
                   <div class="mt-1" style="font-size:.72rem;opacity:.8" id="ms-harit">—</div>
                 </div>
               </div>
               <div class="col-md-8">
                 <div class="rounded-2 p-2 h-100" style="background:rgba(255,255,255,.08)">
-                  <div style="font-size:.7rem;opacity:.7">ШИНЭЭР ИРСЭН ГҮЙЦЭТГЭХ БАРИМТ БИЧИГ ӨМНӨХ ОНЫ МӨН ҮЕЭС</div>
+                  <div style="font-size:.7rem;opacity:.7">ШҮҮХЭЭС ШИНЭЭР НЭМЭГДСЭН БАРИМТ БИЧИГ</div>
                   <div class="fw-bold fs-5 mt-1" style="color:#f0c040" id="ms-shine">—</div>
                 </div>
               </div>
