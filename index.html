@@ -384,8 +384,8 @@ const ROLE_FORMS = {
       {id:'uldegdel_dun',l:'Үлдэгдэл дүн',u:'₮'},
       {id:'bodit_pct',l:'Бодит биелэлт',u:'%'},
       {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
-      {id:'umnuh_too',l:'Өмнөх оны мөн үеийн тоо',u:'ш'},
-      {id:'umnuh_dun',l:'Өмнөх оны мөн үеийн дүн',u:'₮'},
+      {id:'umnuh_ossun',l:'Өмнөх оны мөн үеэс өссөн',u:'%'},
+      {id:'umnuh_uursan',l:'Өмнөх оны мөн үеэс буурсан',u:'%'},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
       {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
@@ -930,8 +930,7 @@ function renderReportForm(){
           html+=`<tr><td class="fw-semibold small">${cat}</td>`;
           for(const col of sec.cols){
             const fid=ck+col.id;
-            const lavCb=sec.lav_computed?' oninput="computeLavSums()"':'';
-            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}" step="any" min="0" value="${d[fid]||''}"${lavCb}></td>`;
+            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}" step="any" min="0" value="${d[fid]||''}"></td>`;
           }
           html+='</tr>';
         }
@@ -986,7 +985,11 @@ function renderReportForm(){
     }
   }
   document.getElementById('report-fields').innerHTML=html;
-  if(u.role==='lavlagaa_negtle') computeLavSums();
+  if(u.role==='lavlagaa_negtle'){
+    computeLavSums();
+    const lavTbl=document.getElementById('lav-table');
+    if(lavTbl) lavTbl.addEventListener('input', computeLavSums);
+  }
 
   // Fill general fields
   document.getElementById('f-hiiseh').value=d.hiiseh_ajil||'';
