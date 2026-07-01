@@ -376,15 +376,21 @@ const ROLE_FORMS = {
     {t:'Гүйцэтгэх баримт бичгийн биелэлт',table:true,
      cats:['Иргэний хэрэг','Эрүүгийн хэрэг','Захиргааны хэрэг','Зөрчлийн шийдвэр гүйцэтгэл','Бусад хэрэг','Хүүхдийн тэтгэлэг','Нэгдсэн мэдээ'],
      cols:[
-      {id:'bieluu_too',l:'Биелүүлбэл зохих тоо',u:'ш'},
-      {id:'bieluu_dun',l:'Биелүүлбэл зохих дүн',u:'₮'},
-      {id:'bodit_too',l:'Бодитой биелүүлсэн тоо',u:'ш'},
-      {id:'bodit_dun',l:'Бодитой биелүүлсэн дүн',u:'₮'},
-      {id:'uldegdel_too',l:'Үлдэгдэл тоо',u:'ш'},
-      {id:'uldegdel_dun',l:'Үлдэгдэл дүн',u:'₮'},
-      {id:'bodit_pct',l:'Бодит биелэлт',u:'%'},
+      {id:'bieluu',l:'Биелүүлбэл зохих',stack:[
+        {id:'bieluu_too',u:'ш'},
+        {id:'bieluu_dun',u:'₮'},
+      ]},
+      {id:'bodit',l:'Бодитой биелүүлсэн',stack:[
+        {id:'bodit_too',u:'ш'},
+        {id:'bodit_dun',u:'₮'},
+        {id:'bodit_pct',u:'%',l:'Бодит биелэлт'},
+        {id:'umnuh_haritsuulalt',u:'%',l:'Өмнөх оны харьцуулалт',s:'0.1',allowNeg:true},
+      ]},
+      {id:'uldegdel',l:'Үлдэгдэл',stack:[
+        {id:'uldegdel_too',u:'ш'},
+        {id:'uldegdel_dun',u:'₮'},
+      ]},
       {id:'mongon_pct',l:'Мөнгөн биелэлт',u:'%'},
-      {id:'umnuh_haritsuulalt',l:'Өмнөх оны мөн үетэй харьцуулбал (+өссөн / −буурсан)',u:'%',s:'0.1',allowNeg:true},
      ]},
     {t:'Нэмэлт мэдээлэл',f:[
       {id:'shine_barimt',l:'Шүүхээс шинээр нэмэгдсэн баримт бичиг',u:'ш'},
@@ -813,14 +819,17 @@ async function renderHome(){
           let pairs=[];
           for(const sec of secs){
             if(sec.table){
-              // For table-type (medee_too): show totals row
+              // For table-type: show totals row, handle stack columns
               for(const col of sec.cols){
-                let total=0; let hasVal=false;
-                for(const cat of sec.cats){
-                  const v=d['tbl_'+catKey(cat)+'__'+col.id];
-                  if(v!==undefined&&v!==''){total+=parseFloat(v)||0; hasVal=true;}
+                const subs=col.stack||[{id:col.id,l:col.l,u:col.u}];
+                for(const sub of subs){
+                  let total=0; let hasVal=false;
+                  for(const cat of sec.cats){
+                    const v=d['tbl_'+catKey(cat)+'__'+sub.id];
+                    if(v!==undefined&&v!==''){total+=parseFloat(v)||0; hasVal=true;}
+                  }
+                  if(hasVal) pairs.push(`<span class="text-muted" style="font-size:.75rem">${sub.l||col.l}:</span> <strong>${total.toLocaleString()}</strong> <span class="unit">${sub.u}</span>`);
                 }
-                if(hasVal) pairs.push(`<span class="text-muted" style="font-size:.75rem">${col.l}:</span> <strong>${total.toLocaleString()}</strong> <span class="unit">${col.u}</span>`);
               }
             } else {
               for(const f of sec.f){
@@ -930,16 +939,31 @@ function renderReportForm(){
       if(sec.table){
         const tblId=sec.lav_computed?'id="lav-table" ':'';
         html+=`<div class="table-responsive mb-2"><table ${tblId}class="table table-sm table-bordered">
-          <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:95px">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
+          <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:120px">${c.l}${c.stack?'':('<br><small class="text-muted">'+c.u+'</small>')}</th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
           html+=`<tr><td class="fw-semibold small">${cat}</td>`;
           for(const col of sec.cols){
-            const fid=ck+col.id;
             const lavEvt=sec.lav_computed?' oninput="computeLavSums()"':'';
-            const minAttr=col.allowNeg?'':' min="0"';
-            const stepAttr=col.s?` step="${col.s}"`:'step="any"';
-            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}"${lavEvt} ${stepAttr}${minAttr} value="${d[fid]||''}"></td>`;
+            if(col.stack){
+              html+=`<td>`;
+              for(const sub of col.stack){
+                const fid=ck+sub.id;
+                const minA=sub.allowNeg?'':' min="0"';
+                const stepA=sub.s?` step="${sub.s}"`:'';
+                html+=`<div class="d-flex align-items-center gap-1 mb-1">
+                  ${sub.l?`<small class="text-muted" style="font-size:.7rem;white-space:nowrap;min-width:60px">${sub.l}:</small>`:''}
+                  <input type="number" class="form-control tbl-input" style="min-width:70px" name="${fid}"${stepA}${minA} value="${d[fid]||''}">
+                  <small class="text-muted">${sub.u}</small>
+                </div>`;
+              }
+              html+=`</td>`;
+            } else {
+              const fid=ck+col.id;
+              const minAttr=col.allowNeg?'':' min="0"';
+              const stepAttr=col.s?` step="${col.s}"`:'';
+              html+=`<td><input type="number" class="form-control tbl-input" name="${fid}"${lavEvt}${stepAttr}${minAttr} value="${d[fid]||''}"></td>`;
+            }
           }
           html+='</tr>';
         }
@@ -1122,15 +1146,26 @@ async function loadConsolidated(){
         if(sec.table){
           html+=`<div class="sec-head">${sec.t}</div>
             <div class="table-responsive mb-2"><table class="table table-sm table-bordered">
-            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
+            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}${c.stack?'':('<br><small class="text-muted">'+c.u+'</small>')}</th>`).join('')}</tr></thead><tbody>`;
           for(const cat of sec.cats){
             const ck='tbl_'+catKey(cat)+'__';
             html+=`<tr><td class="fw-semibold small">${cat}</td>`;
             for(const col of sec.cols){
+              if(col.stack){
+                html+=`<td>`;
+                for(const sub of col.stack){
+                  const fid=ck+sub.id;
+                  let total=0;
+                  for(const r of roleReps) total+=(parseFloat((r.data||{})[fid])||0);
+                  html+=`<div class="text-center fw-semibold">${sub.l?`<small class="d-block text-muted" style="font-size:.7rem">${sub.l}</small>`:''}${total?total.toLocaleString():'—'} <small class="text-muted">${sub.u}</small></div>`;
+                }
+                html+=`</td>`;
+              } else {
               const fid=ck+col.id;
               let total=0;
               for(const r of roleReps) total+=(parseFloat((r.data||{})[fid])||0);
               html+=`<td class="text-center fw-semibold">${total?total.toLocaleString():'—'}</td>`;
+              }
             }
             html+=`</tr>`;
           }
