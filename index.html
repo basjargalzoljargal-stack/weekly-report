@@ -338,12 +338,14 @@ const ROLE_FORMS = {
      ]},
     {t:'Материал татаж хяналт',f:[
       {id:'material_hyanasan',l:'Материал татаж хянасан',u:'ш'},
+      {id:'negj_tataj',l:'Аль нэгжээс гүйцэтгэх баримт бичиг татаж хянасан',negj:true},
     ]},
     {t:'Албан даалгавар',f:[
       {id:'daalg_khuleen',l:'Хүлээн авч хянасан',u:'ш'},
       {id:'daalg_hurgelsen',l:'Хүргүүлсэн',u:'ш'},
       {id:'daalg_butsaasan',l:'Буцаасан',u:'ш'},
       {id:'daalg_shiljuulsen',l:'Харьяаллын дагуу гүйцэтгэх баримт бичиг шилжүүлсэн',u:'ш'},
+      {id:'negj_uurg',l:'Аль нэгжид үүрэг хүргүүлсэн',negj:true},
     ]},
     {t:'Тэмдэглэл',f:[
       {id:'uurg_yavuulsan',l:'Явуулсан үүрэг',u:'',ta:true},
@@ -503,6 +505,80 @@ function toast(msg,ok=true){
   setTimeout(()=>el.remove(),3500);
 }
 function catKey(cat){return cat.replace(/[\s,]/g,'_').toLowerCase();}
+
+// ── 31 нэгжийн жагсаалт ─────────────────────────────────
+const NEGJ_GROUPS=[
+  {b:'Төвийн бүс',n:[
+    'Булган аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+    'Төв аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+    'Дархан-Уул аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар- 445 дугаар нээлттэй хорих анги',
+    'Орхон аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар-437 дугаар нээлттэй хорих анги',
+    'Сэлэнгэ аймаг шүүхийн шийдвэр гүйцэтгэх газар',
+    'Сэлэнгэ аймгийн Мандал сум дахь Шүүхийн шийдвэр гүйцэтгэх хэлтэс - 413 дугаар нээлттэй, хаалттай хорих анги',
+    'Сэлэнгэ аймгийн Сайхан сум дахь шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+  ]},
+  {b:'Хангайн бүс',n:[
+    'Хөвсгөл аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Архангай аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Өвөрхангай аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Өвөрхангай аймгийн Хархорин сум дахь шүүхийн шийдвэр гүйцэтгэх хэлтэс-423 дугаар нээлттэй хаалттай хорих анги',
+    'Баянхонгор аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+  ]},
+  {b:'Зүүн бүс',n:[
+    'Дорнод аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Сүхбаатар аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Багануур дүүрэг дэх Шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+    'Налайх, Багахангай дүүрэг дэх шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+    'Хэнтий аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар-419 дүгээр нээлттэй хорих анги',
+  ]},
+  {b:'Баруун бүс',n:[
+    'Баян-Өлгий аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Говь-Алтай аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+    'Завхан аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+    'Завхан аймгийн Тосонцэнгэл сум дахь Шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+    'Ховд аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар - 457 дугаар нээлттэй, хаалттай хорих анги',
+    'Увс аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+  ]},
+  {b:'Говийн бүс',n:[
+    'Дорноговь аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар',
+    'Дорноговь аймгийн Замын-Үүд сум дахь Шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+    'Дундговь аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Говьсүмбэр аймаг дахь шүүхийн шийдвэр гүйцэтгэх газар 425 дугаар нээлттэй хорих анги',
+    'Өмнөговь аймаг дахь Шүүхийн шийдвэр гүйцэтгэх газар',
+    'Өмнөговь аймгийн Ханбогд сум дахь Шүүхийн шийдвэр гүйцэтгэх хэлтэс',
+  ]},
+  {b:'УБ хот',n:[
+    'Банкны төлбөр барагдуулах газар',
+    'Нийслэлийн шүүхийн шийдвэр гүйцэтгэх газар',
+  ]},
+];
+function negjiOptsHtml(sel=''){
+  return NEGJ_GROUPS.map(g=>
+    `<optgroup label="${g.b}">`+g.n.map(n=>`<option value="${n}"${n===sel?' selected':''}>${n}</option>`).join('')+'</optgroup>'
+  ).join('');
+}
+function negjiRowHtml(n='',t=''){
+  return `<div class="negj-row d-flex gap-2 mb-1 align-items-center">
+    <select class="form-select form-select-sm negj-sel" style="flex:1">
+      <option value="">-- Нэгж сонгох --</option>${negjiOptsHtml(n)}
+    </select>
+    <input type="number" class="form-control form-control-sm negj-num" style="width:90px" min="0" value="${t}" placeholder="тоо">
+    <button type="button" class="btn btn-sm btn-outline-danger px-2" onclick="removeNegjiRow(this)">×</button>
+  </div>`;
+}
+function addNegjiRow(wrapId){
+  const wrap=document.getElementById(wrapId);
+  if(!wrap) return;
+  const div=document.createElement('div');
+  div.innerHTML=negjiRowHtml();
+  wrap.querySelector('.negj-rows').appendChild(div.firstElementChild);
+}
+function removeNegjiRow(btn){
+  const row=btn.closest('.negj-row');
+  const rows=row.closest('.negj-rows');
+  if(rows.children.length>1) row.remove();
+  else{row.querySelector('.negj-sel').value='';row.querySelector('.negj-num').value='';}
+}
 
 // ── App state ─────────────────────────────────────────
 let currentUser=null, currentWeek=null, allUsers=[], allReports={};
@@ -839,7 +915,20 @@ function renderReportForm(){
       } else {
         html+='<div class="row g-3 mb-1">';
         for(const f of sec.f){
-          if(f.ta){
+          if(f.negj){
+            let saved=[];
+            try{if(d[f.id]) saved=JSON.parse(d[f.id]);}catch(e){}
+            if(!saved.length) saved=[{n:'',t:''}];
+            html+=`<div class="col-12">
+              <label class="form-label fw-semibold">${f.l}</label>
+              <div id="negj_${f.id}">
+                <div class="negj-rows">${saved.map(r=>negjiRowHtml(r.n||'',r.t||'')).join('')}</div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addNegjiRow('negj_${f.id}')">
+                  <i class="bi bi-plus"></i> Нэгж нэмэх
+                </button>
+              </div>
+            </div>`;
+          } else if(f.ta){
             html+=`<div class="col-12"><label class="form-label fw-semibold">${f.l}</label>
               <textarea class="form-control" name="${f.id}" rows="2">${d[f.id]||''}</textarea></div>`;
           } else {
@@ -871,6 +960,17 @@ async function submitReport(e){
     const fd=new FormData(document.getElementById('report-form'));
     const data={};
     fd.forEach((v,k)=>{if(v.trim()) data[k]=v.trim();});
+    // Collect negj dropdown rows
+    document.querySelectorAll('[id^="negj_"]').forEach(wrap=>{
+      const fid=wrap.id.replace(/^negj_/,'');
+      const rows=[];
+      wrap.querySelectorAll('.negj-row').forEach(row=>{
+        const n=row.querySelector('.negj-sel').value;
+        const t=row.querySelector('.negj-num').value;
+        if(n||t) rows.push({n,t:parseInt(t)||0});
+      });
+      if(rows.length) data[fid]=JSON.stringify(rows);
+    });
     const reportId=`${currentWeek.start}_${currentUser.id}`;
     await setDoc(doc(db,'reports',reportId),{
       userId:currentUser.id, userName:currentUser.name, rank:currentUser.rank,
@@ -980,8 +1080,9 @@ async function loadConsolidated(){
           }
           html+=`</tbody></table></div>`;
         } else {
-          const numFields=sec.f.filter(f=>!f.ta);
+          const numFields=sec.f.filter(f=>!f.ta&&!f.negj);
           const txtFields=sec.f.filter(f=>f.ta);
+          const negFields=sec.f.filter(f=>f.negj);
           if(numFields.length){
             html+=`<div class="sec-head">${sec.t}</div><div class="row g-2 mb-2">`;
             for(const f of numFields){
@@ -1006,6 +1107,23 @@ async function loadConsolidated(){
               if(vals.length){
                 html+=`<div class="mb-2"><div class="fw-semibold small text-muted mb-1">${f.l}:</div>`;
                 for(const v of vals) html+=`<div class="ms-2 small mb-1"><strong>${v.name}:</strong> ${v.text}</div>`;
+                html+=`</div>`;
+              }
+            }
+          }
+          if(negFields.length){
+            for(const f of negFields){
+              const totals={};
+              for(const r of roleReps){
+                let rows=[];
+                try{if((r.data||{})[f.id]) rows=JSON.parse((r.data||{})[f.id]);}catch(e){}
+                for(const row of rows){if(row.n) totals[row.n]=(totals[row.n]||0)+(parseInt(row.t)||0);}
+              }
+              const entries=Object.entries(totals);
+              if(entries.length){
+                html+=`<div class="mb-2"><div class="fw-semibold small text-muted mb-1">${f.l}:</div>`;
+                for(const [negj,tot] of entries)
+                  html+=`<div class="ms-2 small mb-1">• <strong>${negj}:</strong> ${tot.toLocaleString()} ш</div>`;
                 html+=`</div>`;
               }
             }
