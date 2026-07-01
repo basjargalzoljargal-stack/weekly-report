@@ -921,15 +921,15 @@ function renderReportForm(){
       html+=`<div class="sec-head">${sec.t}</div>`;
       if(sec.note) html+=`<p class="text-muted small">${sec.note}</p>`;
       if(sec.table){
-        const onInp=sec.lav_computed?' oninput="computeLavSums()"':'';
-        html+=`<div class="table-responsive mb-2"${onInp}><table class="table table-sm table-bordered">
+        html+=`<div class="table-responsive mb-2"><table class="table table-sm table-bordered">
           <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center" style="min-width:95px">${c.l}<br><small class="text-muted">${c.u}</small></th>`).join('')}</tr></thead><tbody>`;
         for(const cat of sec.cats){
           const ck='tbl_'+catKey(cat)+'__';
           html+=`<tr><td class="fw-semibold small">${cat}</td>`;
           for(const col of sec.cols){
             const fid=ck+col.id;
-            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}" step="any" min="0" value="${d[fid]||''}"></td>`;
+            const lavCb=sec.lav_computed?' oninput="computeLavSums()"':'';
+            html+=`<td><input type="number" class="form-control tbl-input" name="${fid}" step="any" min="0" value="${d[fid]||''}"${lavCb}></td>`;
           }
           html+='</tr>';
         }
