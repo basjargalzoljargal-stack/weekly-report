@@ -1062,14 +1062,355 @@ function renderReportForm(){
                 <div id="ms-ul-dun" style="color:#f0b429;font-size:.8rem;font-weight:600;margin-top:2px">—</div>
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px">
                 <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:10px">НИЙТ ГББ БИЕЛЭЛТИЙН ХУВЬ</div>
                 <div style="display:flex;gap:16px;align-items:center;margin-bottom:10px">
-                  <div style="display:flex;align-items:center;gap:5px">
-                    <span style="font-size:.7rem;opacity:.7;white-space:nowrap">Г/Х</span>
-                    <input type="number" name="tbl_нэгдсэн_мэдээ__bodit_pct" step="0.1" min="0" value="${d['tbl_нэгдсэн_мэдээ__bodit_pct']||''}"
-                      style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 6px;font-size:1.3rem;font-weight:800;text-align:center">
-                    <span style="font-size:.85rem;opacity:.8">%</span>
+                  <div>
+                    <div style="font-size:.6rem;opacity:.6;margin-bottom:3px">Г/Х %</div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <input type="number" name="tbl_нэгдсэн_мэдээ__bodit_pct" oninput="computeMedeeSums()" step="0.1" style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:3px 6px;font-size:.85rem" value="${d['tbl_нэгдсэн_мэдээ__bodit_pct']||''}">
+                      <span style="opacity:.6;font-size:.8rem">%</span>
+                    </div>
                   </div>
- 
+                  <div>
+                    <div style="font-size:.6rem;opacity:.6;margin-bottom:3px">М/Д %</div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <input type="number" name="tbl_нэгдсэн_мэдээ__mongon_pct" oninput="computeMedeeSums()" step="0.1" style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:3px 6px;font-size:.85rem" value="${d['tbl_нэгдсэн_мэдээ__mongon_pct']||''}">
+                      <span style="opacity:.6;font-size:.8rem">%</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:.7rem;opacity:.7">Өмнөх оноос</span>
+                  <input type="number" name="tbl_нэгдсэн_мэдээ__umnuh_haritsuulalt" step="0.1" style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:3px 6px;font-size:.85rem" value="${d['tbl_нэгдсэн_мэдээ__umnuh_haritsuulalt']||''}">
+                  <span style="opacity:.6;font-size:.8rem">%</span>
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px">
+                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:10px">ШИНЭ ГББ</div>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <input type="number" name="shine_barimt" min="0" style="width:80px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:3px 6px;font-size:.85rem" value="${d['shine_barimt']||''}">
+                  <span style="font-size:.75rem;opacity:.8">ширхэг илүү ирсэн байна</span>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
+      } else if(sec.f){
+        html+=`<div class="row g-3">`;
+        for(const f of sec.f){
+          if(f.prev){
+            html+=`<div class="col-md-6">
+              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
+              <div class="d-flex align-items-end gap-2">
+                <div>
+                  <small class="text-muted d-block" style="font-size:.68rem">Энэ он</small>
+                  <input type="number" class="form-control" id="curr_${f.id}" name="${f.id}" step="1" min="0" value="${d[f.id]||''}" oninput="computePairById('${f.id}')" style="width:110px">
+                </div>
+                <div>
+                  <small class="text-muted d-block" style="font-size:.68rem">Өмнөх он</small>
+                  <input type="number" class="form-control" id="prev_${f.id}" name="${f.id}_prev" step="1" min="0" value="${d[f.id+'_prev']||''}" oninput="computePairById('${f.id}')" style="width:110px">
+                </div>
+                <div id="badge_${f.id}" class="mb-1" style="min-width:65px;text-align:center"></div>
+              </div>
+            </div>`;
+          } else if(f.dyn){
+            let saved=[];
+            try{if(d[f.id]) saved=JSON.parse(d[f.id]);}catch(e){}
+            if(!saved.length) saved=f.defaults||[{l:'',n:''}];
+            html+=`<div class="col-12">
+              <label class="form-label fw-semibold">${f.l}</label>
+              <div id="dyn_${f.id}">
+                <div class="dyn-rows">${saved.map(r=>dynRowHtml(r.l||'',r.n||'')).join('')}</div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addDynRow('dyn_${f.id}')">
+                  <i class="bi bi-plus"></i> Нэмэх
+                </button>
+              </div>
+            </div>`;
+          } else if(f.ta){
+            html+=`<div class="col-12">
+              <label class="form-label fw-semibold">${f.l}</label>
+              <textarea class="form-control" name="${f.id}" rows="3" placeholder="${f.l}">${d[f.id]||''}</textarea>
+            </div>`;
+          } else if(f.negj){
+            // negj (ялгаатай) type
+            const negData=d[f.id]?JSON.parse(d[f.id]):[];
+            const negDefaults=f.items||[];
+            html+=`<div class="col-12">
+              <label class="form-label fw-semibold">${f.l}</label>
+              <div id="negj_${f.id}">
+                <div class="negj-rows">`;
+            const rows=negData.length?negData:negDefaults.map(item=>({t:item,n:''}));
+            for(const r of rows){
+              html+=negjiRowHtml(f.items||[],r.t,r.n);
+            }
+            html+=`</div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addNegjiRow('negj_${f.id}',${JSON.stringify(f.items||[])})">
+                  <i class="bi bi-plus"></i> Нэмэх
+                </button>
+              </div>
+            </div>`;
+          } else {
+            html+=`<div class="col-md-6">
+              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
+              <div class="d-flex align-items-center gap-2">
+                <input type="number" class="form-control" name="${f.id}" step="${f.s||'1'}" ${f.allowNeg?'':' min="0"'} value="${d[f.id]||''}" style="max-width:180px">
+                ${f.u?`<span class="text-muted">${f.u}</span>`:''}
+              </div>
+            </div>`;
+          }
+        }
+        html+=`</div>`;
+      }
+    }
+    // Common: хийсэн ажил, дараагийн 7 хоногт хийх ажил
+    html+=`<div class="sec-head">Тайлбар</div>
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label fw-semibold">Хийсэн ажил <span class="unit">(товч)</span></label>
+        <textarea class="form-control" name="hiiseh_ajil" rows="3" placeholder="Энэ 7 хоногт хийсэн гол ажлуудаа бичнэ үү">${d['hiiseh_ajil']||''}</textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold">Дараагийн 7 хоногт хийх ажил</label>
+        <textarea class="form-control" name="daraa_ajil" rows="3" placeholder="Дараагийн 7 хоногт хийхээр төлөвлөж буй ажлуудаа бичнэ үү">${d['daraa_ajil']||''}</textarea>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('report-fields').innerHTML=html;
+  document.querySelectorAll('[id^="curr_"]').forEach(function(el){
+    computePairById(el.id.replace('curr_',''));
+  });
+  if(u.role==='lavlagaa_negtle'){
+    computeLavSums();
+    const lavTbl=document.getElementById('lav-table');
+    if(lavTbl) lavTbl.addEventListener('input', computeLavSums);
+  }
+  if(u.role==='medee_too'){
+    computeMedeeSums();
+    document.getElementById('report-fields').addEventListener('input',function(e){
+      if(e.target.matches('input,select')) computeMedeeSums();
+    });
+  }
+}
+
+// ── Submit report ───────────────────────────────────────
+async function submitReport(){
+  if(!currentUser||!currentWeek) return;
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Хадгалж байна...';
+  try{
+    const data={};
+    document.querySelectorAll('#report-fields input,#report-fields select,#report-fields textarea').forEach(el=>{
+      if(el.name) data[el.name]=el.type==='number'?(el.value===''?'':Number(el.value)):el.value;
+    });
+    // serialize dyn rows
+    document.querySelectorAll('[id^="dyn_"]').forEach(wrap=>{
+      const fid=wrap.id.replace(/^dyn_/,'');
+      const rows=[];
+      wrap.querySelectorAll('.dyn-row').forEach(row=>{
+        const l=row.querySelector('.dyn-label').value.trim();
+        const n=row.querySelector('.dyn-num').value;
+        if(l||n) rows.push({l,n:parseInt(n)||0});
+      });
+      if(rows.length) data[fid]=JSON.stringify(rows);
+    });
+    // serialize negj rows
+    document.querySelectorAll('[id^="negj_"]').forEach(wrap=>{
+      const fid=wrap.id.replace(/^negj_/,'');
+      const rows=[];
+      wrap.querySelectorAll('.negj-row').forEach(row=>{
+        const t=row.querySelector('.negj-sel')?.value||row.querySelector('.negj-txt')?.value||'';
+        const n=row.querySelector('.negj-num').value;
+        if(t||n) rows.push({t,n:parseInt(n)||0});
+      });
+      if(rows.length) data[fid]=JSON.stringify(rows);
+    });
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    const submittedAt=`${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const rid=`${currentUser.id}_${currentWeek.start}`;
+    await setDoc(doc(db,'reports',rid),{
+      userId:currentUser.id,weekStart:currentWeek.start,
+      submittedAt,data,updatedAt:serverTimestamp()
+    });
+    allReports[currentUser.id]={userId:currentUser.id,weekStart:currentWeek.start,submittedAt,data};
+    toast('Амжилттай хадгаллаа ✓');
+    renderReportForm();
+  }catch(ex){ toast('Алдаа: '+ex.message,false); }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-send me-1"></i>Илгээх';
+}
+
+// ── Consolidated view ───────────────────────────────────
+async function loadConsolidated(){
+  const el=document.getElementById('view-consolidated');
+  if(!el) return;
+  const w=currentWeek||weekDates();
+  document.querySelectorAll('.cons-week-label').forEach(e=>e.textContent=fmtWeek(w.start,w.end));
+  el.querySelector('#cons-body').innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
+  await loadUsers();
+  await loadWeekReports(w.start);
+  let html='';
+  const depts=DEPT_ORDER;
+  for(const dk of depts){
+    const dus=allUsers.filter(u=>u.department===dk&&u.isActive&&u.role!=='head');
+    if(!dus.length) continue;
+    html+=`<div class="sec-head">${DEPT_NAMES[dk]}</div>`;
+    for(const u of dus){
+      const rep=allReports[u.id];
+      const d=rep?.data||{};
+      const done=!!rep;
+      html+=`<div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-person me-1"></i>${u.rank} ${u.name} — <small style="opacity:.8">${ROLE_LABELS[u.role]||u.role}</small></span>
+          ${done?`<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>${rep.submittedAt||'Илгээсэн'}</span>`:'<span class="badge bg-danger">Илгээгүй</span>'}
+        </div>
+        <div class="card-body py-2">`;
+      if(!done){
+        html+=`<p class="text-muted mb-0">Тайлан илгээгүй байна.</p>`;
+      } else {
+        const secs=ROLE_FORMS[u.role]||[];
+        for(const sec of secs){
+          html+=`<div class="mb-2"><strong class="text-primary small">${sec.t}</strong>`;
+          if(sec.table){
+            html+=`<div class="table-responsive"><table class="table table-sm table-bordered mb-0"><thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th>${c.l}</th>`).join('')}</tr></thead><tbody>`;
+            for(const cat of sec.cats){
+              const ck='tbl_'+catKey(cat)+'__';
+              html+=`<tr><td class="small">${cat}</td>`;
+              for(const col of sec.cols){
+                const subs=col.stack||[{id:col.id,u:col.u}];
+                html+=`<td class="small">`;
+                for(const sub of subs){
+                  const v=d[ck+sub.id];
+                  const uv=d[ck+sub.id+'_unit']||sub.u||'';
+                  if(v!==undefined&&v!=='') html+=`<div>${Number(v).toLocaleString()} ${uv}</div>`;
+                  else html+=`<div class="text-muted">—</div>`;
+                }
+                html+=`</td>`;
+              }
+              html+=`</tr>`;
+            }
+            html+=`</tbody></table></div>`;
+          } else if(sec.f){
+            html+=`<div class="row g-1 mt-1">`;
+            for(const f of sec.f){
+              if(f.dyn){
+                let rows=[];
+                try{if(d[f.id]) rows=JSON.parse(d[f.id]);}catch(e){}
+                html+=`<div class="col-12"><span class="text-muted small">${f.l}:</span><ul class="mb-0 ps-3">`;
+                for(const r of rows) html+=`<li class="small">${r.l}: <strong>${r.n}</strong></li>`;
+                html+=`</ul></div>`;
+              } else if(f.negj){
+                let rows=[];
+                try{if(d[f.id]) rows=JSON.parse(d[f.id]);}catch(e){}
+                html+=`<div class="col-12"><span class="text-muted small">${f.l}:</span><ul class="mb-0 ps-3">`;
+                for(const r of rows) html+=`<li class="small">${r.t}: <strong>${r.n}</strong></li>`;
+                html+=`</ul></div>`;
+              } else if(f.prev){
+                const v=d[f.id]; const vp=d[f.id+'_prev'];
+                html+=`<div class="col-md-6 small"><span class="text-muted">${f.l}:</span> <strong>${v!==undefined&&v!==''?Number(v).toLocaleString():'—'} ${f.u||''}</strong>`;
+                if(vp!==undefined&&vp!=='') html+=` <span class="text-muted">(өмнөх он: ${Number(vp).toLocaleString()})</span>`;
+                html+=`</div>`;
+              } else if(f.ta){
+                const v=d[f.id];
+                if(v) html+=`<div class="col-12 small"><span class="text-muted">${f.l}:</span> ${v}</div>`;
+              } else {
+                const v=d[f.id];
+                if(v!==undefined&&v!=='') html+=`<div class="col-md-6 small"><span class="text-muted">${f.l}:</span> <strong>${Number(v).toLocaleString()} ${f.u||''}</strong></div>`;
+              }
+            }
+            html+=`</div>`;
+          }
+          html+=`</div>`;
+        }
+        if(d.hiiseh_ajil) html+=`<div class="mt-2 p-2 rounded" style="background:#f8f9fa"><strong class="small">Хийсэн ажил:</strong><p class="mb-0 small">${d.hiiseh_ajil}</p></div>`;
+        if(d.daraa_ajil) html+=`<div class="mt-1 p-2 rounded" style="background:#f8f9fa"><strong class="small">Дараагийн 7 хоногт:</strong><p class="mb-0 small">${d.daraa_ajil}</p></div>`;
+      }
+      html+=`</div></div>`;
+    }
+  }
+  if(!html) html='<div class="alert alert-info">Энэ 7 хоногт тайлан байхгүй байна.</div>';
+  el.querySelector('#cons-body').innerHTML=html;
+}
+
+// ── Admin ───────────────────────────────────────────────
+async function renderAdmin(){
+  await loadUsers(true);
+  const tbody=document.getElementById('admin-users-table');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  allUsers.forEach(u=>{
+    const tr=document.createElement('tr');
+    if(!u.isActive) tr.style.opacity='.5';
+    tr.innerHTML=`<td>${u.id}</td>
+      <td><input class="form-control form-control-sm" value="${u.rank||''}" onchange="changeRankName('${u.id}','rank',this.value)"></td>
+      <td><input class="form-control form-control-sm" value="${u.name||''}" onchange="changeRankName('${u.id}','name',this.value)"></td>
+      <td><select class="form-select form-select-sm" onchange="changeRole('${u.id}',this.value)">
+        ${Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td><select class="form-select form-select-sm" onchange="changeDept('${u.id}',this.value)">
+        ${Object.entries(DEPT_NAMES).map(([k,v])=>`<option value="${k}"${u.department===k?' selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td><input class="form-control form-control-sm" type="password" placeholder="Шинэ нууц үг" id="pw_${u.id}">
+          <button class="btn btn-sm btn-outline-secondary mt-1" onclick="changePass('${u.id}')">Солих</button></td>
+      <td><button class="btn btn-sm ${u.isActive?'btn-outline-danger':'btn-outline-success'}" onclick="toggleActive('${u.id}',${!u.isActive})">${u.isActive?'Идэвхгүй болгох':'Идэвхжүүлэх'}</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function adminAddUser(){
+  const rank=document.getElementById('new-rank').value.trim();
+  const name=document.getElementById('new-name').value.trim();
+  const role=document.getElementById('new-role').value;
+  const dept=document.getElementById('new-dept').value;
+  if(!name){toast('Нэр оруулна уу',false);return;}
+  const newId=String(Math.max(0,...allUsers.map(u=>parseInt(u.id)||0))+1);
+  await setDoc(doc(db,'users',newId),{rank,name,role,department:dept,isActive:true,password:'1234',createdAt:serverTimestamp()});
+  toast('Нэмэгдлээ ✓');
+  await renderAdmin();
+}
+
+async function changeRankName(uid,field,val){
+  await updateDoc(doc(db,'users',uid),{[field]:val});
+  const u=allUsers.find(x=>x.id===uid); if(u) u[field]=val;
+}
+async function changeRole(uid,val){
+  await updateDoc(doc(db,'users',uid),{role:val});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.role=val;
+}
+async function changeDept(uid,val){
+  await updateDoc(doc(db,'users',uid),{department:val});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.department=val;
+}
+window.changeDept=changeDept;
+async function changePass(uid){
+  const el=document.getElementById('pw_'+uid);
+  if(!el||!el.value.trim()){toast('Нууц үг оруулна уу',false);return;}
+  await updateDoc(doc(db,'users',uid),{password:el.value.trim()});
+  el.value=''; toast('Нууц үг солигдлоо ✓');
+}
+async function toggleActive(uid,state){
+  await updateDoc(doc(db,'users',uid),{isActive:state});
+  const u=allUsers.find(x=>x.id===uid); if(u) u.isActive=state;
+  renderAdmin();
+}
+async function changeAdminPass(e){
+  e.preventDefault();
+  const np=document.getElementById('new-admin-pass').value.trim();
+  const cp=document.getElementById('confirm-admin-pass').value.trim();
+  if(!np){toast('Нууц үг оруулна уу',false);return;}
+  if(np!==cp){toast('Нууц үг таарахгүй байна',false);return;}
+  await setDoc(doc(db,'settings','admin'),{password:np});
+  toast('Admin нууц үг солигдлоо ✓');
+  document.getElementById('new-admin-pass').value='';
+  document.getElementById('confirm-admin-pass').value='';
+}
+function refreshReport(){ renderReportForm(); toast('Шинэчлэгдлээ ✓'); }
+
+// ── Init ────────────────────────────────────────────────
+seedUsers().then(()=>populateLoginSelect()).catch(e=>{ populateLoginSelect(); console.error(e); });
+</script>
+</body>
+</html>
