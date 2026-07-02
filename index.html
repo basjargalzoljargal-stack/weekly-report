@@ -378,15 +378,15 @@ const ROLE_FORMS = {
      cols:[
       {id:'bieluu',l:'Биелүүлбэл зохих',stack:[
         {id:'bieluu_too',u:'ш'},
-        {id:'bieluu_dun',u:'₮'},
+        {id:'bieluu_dun',u:'₮',unitSel:true},
       ]},
       {id:'bodit',l:'Бодитой биелүүлсэн',stack:[
         {id:'bodit_too',u:'ш'},
-        {id:'bodit_dun',u:'₮'},
+        {id:'bodit_dun',u:'₮',unitSel:true},
       ]},
       {id:'uldegdel',l:'Үлдэгдэл',stack:[
         {id:'uldegdel_too',u:'ш'},
-        {id:'uldegdel_dun',u:'₮'},
+        {id:'uldegdel_dun',u:'₮',unitSel:true},
       ]},
       {id:'bielelt_pct',l:'Биелэлтийн хувь',stack:[
         {id:'bodit_pct',u:'%',l:'Бодит'},
@@ -578,7 +578,7 @@ function computeLavSums(){
   var r0=rowSum('нэг_цэг');
   var r1=rowSum('орон_нутаг');
   var r2=rowSum('арилжааны_банк');
-  var r3=rowSum('төрийн_эрх_бүхий_байгуулла');
+  var r3=rowSum('төрийн_эрх_бүхий_байгууллага');
   var r4=rowSum('хүсэлт');
   var c1=r0+r1+r3+r4;
   var c2=r2;
@@ -1010,11 +1010,25 @@ function renderReportForm(){
                 const fid=ck+sub.id;
                 const minA=sub.allowNeg?'':' min="0"';
                 const stepA=sub.s?` step="${sub.s}"`:'';
-                html+=`<div class="d-flex align-items-center gap-1 mb-1">
-                  ${sub.l?`<small class="text-muted" style="font-size:.7rem;white-space:nowrap;min-width:60px">${sub.l}:</small>`:''}
-                  <input type="number" class="form-control tbl-input" style="min-width:70px" name="${fid}"${meeEvt}${stepA}${minA} value="${d[fid]||''}">
-                  <small class="text-muted">${sub.u}</small>
-                </div>`;
+                if(sub.unitSel){
+                  const ufid=fid+'_unit';
+                  const uval=d[ufid]||'тэрбум';
+                  html+=`<div class="d-flex align-items-center gap-1 mb-1">
+                    <input type="number" class="form-control tbl-input" style="min-width:70px" name="${fid}"${meeEvt}${stepA}${minA} value="${d[fid]||''}">
+                    <select name="${ufid}" class="form-select form-select-sm" style="width:82px;font-size:.72rem;padding:2px 4px">
+                      <option value="сая"${uval==='сая'?' selected':''}>сая</option>
+                      <option value="тэрбум"${uval==='тэрбум'?' selected':''}>тэрбум</option>
+                      <option value="их наяд"${uval==='их наяд'?' selected':''}>их наяд</option>
+                    </select>
+                    <small class="text-muted">₮</small>
+                  </div>`;
+                } else {
+                  html+=`<div class="d-flex align-items-center gap-1 mb-1">
+                    ${sub.l?`<small class="text-muted" style="font-size:.7rem;white-space:nowrap;min-width:60px">${sub.l}:</small>`:''}
+                    <input type="number" class="form-control tbl-input" style="min-width:70px" name="${fid}"${meeEvt}${stepA}${minA} value="${d[fid]||''}">
+                    <small class="text-muted">${sub.u}</small>
+                  </div>`;
+                }
               }
               html+=`</td>`;
             } else {
@@ -1058,486 +1072,4 @@ function renderReportForm(){
                       style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 6px;font-size:1.3rem;font-weight:800;text-align:center">
                     <span style="font-size:.85rem;opacity:.8">%</span>
                   </div>
-                  <div style="display:flex;align-items:center;gap:5px">
-                    <span style="font-size:.7rem;opacity:.7;white-space:nowrap">М/Д</span>
-                    <input type="number" name="tbl_нэгдсэн_мэдээ__mongon_pct" step="0.1" min="0" value="${d['tbl_нэгдсэн_мэдээ__mongon_pct']||''}"
-                      style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 6px;font-size:1.3rem;font-weight:800;text-align:center">
-                    <span style="font-size:.85rem;opacity:.8">%</span>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span style="font-size:.7rem;opacity:.7;white-space:nowrap">Өмнөх оноос</span>
-                  <input type="number" name="tbl_нэгдсэн_мэдээ__umnuh_haritsuulalt" step="0.1" value="${d['tbl_нэгдсэн_мэдээ__umnuh_haritsuulalt']||''}"
-                    style="width:70px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:3px 6px;font-size:1rem;font-weight:700;text-align:center">
-                  <span style="font-size:.8rem;opacity:.8">%</span>
-                </div>
-              </div>
-              <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px">
-                <div style="font-size:.6rem;letter-spacing:1px;opacity:.6;margin-bottom:10px">ШИНЭЭР ИРСЭН ГББ ӨМНӨХ ОНЫ МӨН ҮЕЭС</div>
-                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-                  <input type="number" name="shine_barimt" min="0" value="${d['shine_barimt']||''}"
-                    style="width:130px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#f0b429;border-radius:6px;padding:4px 8px;font-size:1.5rem;font-weight:800;text-align:center">
-                  <span style="font-size:.8rem;opacity:.85;white-space:nowrap">ИЛҮҮ ИРСЭН БАЙНА.</span>
-                </div>
-              </div>
-            </div>
-          </div>`;
-        }
-        if(sec.lav_computed){
-          html+=`<div class="row g-2 mb-3">
-            <div class="col-md-4"><div class="card border-0" style="background:#eef4ff">
-              <div class="card-body py-2 px-3">
-                <div class="text-muted" style="font-size:.72rem">Шүүхийн шийдвэрийн тодорхойлолт, лавлагаа олгосон</div>
-                <div class="fw-bold fs-5" id="lav-c1">—</div>
-            </div></div></div>
-            <div class="col-md-4"><div class="card border-0" style="background:#efffef">
-              <div class="card-body py-2 px-3">
-                <div class="text-muted" style="font-size:.72rem">Арилжааны банкаар цахим сантай тулгаж хүргүүлсэн</div>
-                <div class="fw-bold fs-5" id="lav-c2">—</div>
-            </div></div></div>
-            <div class="col-md-4"><div class="card border-0" style="background:#fff8e1">
-              <div class="card-body py-2 px-3">
-                <div class="text-muted" style="font-size:.72rem">Нийт олгосон лавлагааны тоо</div>
-                <div class="fw-bold fs-4" id="lav-c3">—</div>
-            </div></div></div>
-          </div>`;
-        }
-      } else {
-        html+='<div class="row g-3 mb-1">';
-        for(const f of sec.f){
-          if(f.negj){
-            let saved=[];
-            try{if(d[f.id]) saved=JSON.parse(d[f.id]);}catch(e){}
-            if(!saved.length) saved=[{n:'',t:''}];
-            html+=`<div class="col-12">
-              <label class="form-label fw-semibold">${f.l}</label>
-              <div id="negj_${f.id}">
-                <div class="negj-rows">${saved.map(r=>negjiRowHtml(r.n||'',r.t||'')).join('')}</div>
-                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addNegjiRow('negj_${f.id}')">
-                  <i class="bi bi-plus"></i> Нэгж нэмэх
-                </button>
-              </div>
-            </div>`;
-          } else if(f.ta){
-            html+=`<div class="col-12"><label class="form-label fw-semibold">${f.l}</label>
-              <textarea class="form-control" name="${f.id}" rows="2">${d[f.id]||''}</textarea></div>`;
-          } else if(f.dyn){
-            let saved=[];
-            try{if(d[f.id]) saved=JSON.parse(d[f.id]);}catch(e){}
-            if(!saved.length) saved=f.defaults||[{l:'',n:''}];
-            html+=`<div class="col-12">
-              <label class="form-label fw-semibold">${f.l}</label>
-              <div id="dyn_${f.id}">
-                <div class="dyn-rows">${saved.map(r=>dynRowHtml(r.l||'',r.n||'')).join('')}</div>
-                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addDynRow('dyn_${f.id}')">
-                  <i class="bi bi-plus"></i> Нэмэх
-                </button>
-              </div>
-            </div>`;
-          } else if(f.prev){
-            html+=`<div class="col-md-6">
-              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
-              <div class="d-flex align-items-end gap-2">
-                <div>
-                  <small class="text-muted d-block" style="font-size:.68rem">Энэ он</small>
-                  <input type="number" class="form-control" id="curr_${f.id}" name="${f.id}" step="1" min="0" value="${d[f.id]||''}" oninput="computePairById('${f.id}')" style="width:110px">
-                </div>
-                <div>
-                  <small class="text-muted d-block" style="font-size:.68rem">Өмнөх он</small>
-                  <input type="number" class="form-control" id="prev_${f.id}" name="${f.id}_prev" step="1" min="0" value="${d[f.id+'_prev']||''}" oninput="computePairById('${f.id}')" style="width:110px">
-                </div>
-                <div id="badge_${f.id}" class="mb-1" style="min-width:65px;text-align:center"></div>
-              </div>
-            </div>`;
-          } else {
-            html+=`<div class="col-md-6 col-lg-4">
-              <label class="form-label fw-semibold">${f.l}${f.u?`<span class="unit">(${f.u})</span>`:''}</label>
-              <input type="number" class="form-control" name="${f.id}" step="${f.s||'1'}" min="0" value="${d[f.id]||''}">
-            </div>`;
-          }
-        }
-        html+='</div>';
-      }
-    }
-  }
-  document.getElementById('report-fields').innerHTML=html;
-  // Init prev-year pair badges on load
-  document.querySelectorAll('[id^="curr_"]').forEach(function(el){
-    computePairById(el.id.replace('curr_',''));
-  });
-  if(u.role==='lavlagaa_negtle'){
-    computeLavSums();
-    const lavTbl=document.getElementById('lav-table');
-    if(lavTbl) lavTbl.addEventListener('input', computeLavSums);
-  }
-  if(u.role==='medee_too'){
-    computeMedeeSums();
-    document.getElementById('report-fields').addEventListener('input',function(e){
-      if(e.target.matches('input')) computeMedeeSums();
-    });
-  }
-
-  // Fill general fields
-  document.getElementById('f-hiiseh').value=d.hiiseh_ajil||'';
-  document.getElementById('f-hiikh').value=d.hiikh_ajil||'';
-  document.getElementById('f-temdeg').value=d.temdegleltar||'';
-}
-
-// ── Submit report ───────────────────────────────────────
-async function submitReport(e){
-  e.preventDefault();
-  if(!currentUser||!currentWeek) return;
-  const btn=document.getElementById('submit-btn');
-  btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Хадгалж байна...';
-  try{
-    const fd=new FormData(document.getElementById('report-form'));
-    const data={};
-    fd.forEach((v,k)=>{if(v.trim()) data[k]=v.trim();});
-    // Collect negj dropdown rows
-    document.querySelectorAll('[id^="negj_"]').forEach(wrap=>{
-      const fid=wrap.id.replace(/^negj_/,'');
-      const rows=[];
-      wrap.querySelectorAll('.negj-row').forEach(row=>{
-        const n=row.querySelector('.negj-sel').value;
-        const t=row.querySelector('.negj-num').value;
-        if(n||t) rows.push({n,t:parseInt(t)||0});
-      });
-      if(rows.length) data[fid]=JSON.stringify(rows);
-    });
-    document.querySelectorAll('[id^="dyn_"]').forEach(wrap=>{
-      const fid=wrap.id.replace(/^dyn_/,'');
-      const rows=[];
-      wrap.querySelectorAll('.dyn-row').forEach(row=>{
-        const l=row.querySelector('.dyn-label').value.trim();
-        const n=row.querySelector('.dyn-num').value;
-        if(l||n) rows.push({l,n:parseInt(n)||0});
-      });
-      if(rows.length) data[fid]=JSON.stringify(rows);
-    });
-    const reportId=`${currentWeek.start}_${currentUser.id}`;
-    await setDoc(doc(db,'reports',reportId),{
-      userId:currentUser.id, userName:currentUser.name, rank:currentUser.rank,
-      department:currentUser.department, role:currentUser.role,
-      weekStart:currentWeek.start, weekEnd:currentWeek.end,
-      data, submittedAt:new Date().toLocaleString('mn-MN'), updatedAt:serverTimestamp()
-    });
-    allReports[currentUser.id]={userId:currentUser.id,data,submittedAt:new Date().toLocaleString('mn-MN')};
-    toast('✓ Тайлан хадгалагдлаа');
-    const filledOnBehalf=loggedInUser&&loggedInUser.id!==currentUser.id;
-    if(filledOnBehalf){ showView('home'); } else { renderReportForm(); }
-  } catch(err){ toast('Алдаа гарлаа: '+err.message, false); }
-  btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy me-1"></i>Хадгалах';
-}
-
-// ── Consolidated ────────────────────────────────────────────
-async function loadConsolidated(){
-  const sel=document.getElementById('week-selector');
-  if(!sel.options.length){
-    for(let i=0;i>=-19;i--){
-      const w=weekDates(i);
-      const opt=document.createElement('option');
-      opt.value=w.start; opt.textContent=fmtWeek(w.start,w.end);
-      if(i===0) opt.selected=true;
-      sel.appendChild(opt);
-    }
-  }
-  const selWeek=sel.value||weekDates().start;
-  document.getElementById('cons-week-label').textContent=sel.options[sel.selectedIndex]?.textContent||'';
-  const body=document.getElementById('cons-body');
-  body.innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
-
-  await loadUsers();
-  const snap=await getDocs(query(collection(db,'reports'),where('weekStart','==',selWeek)));
-  const reps={};
-  snap.forEach(d=>{const r=d.data(); reps[r.userId]=r;});
-
-  const headDept=(loggedInUser&&loggedInUser.role==='head')?loggedInUser.department:null;
-  const visibleDepts=headDept?[headDept]:DEPT_ORDER;
-
-  // ── Submission status badges ──────────────────────────────
-  let html='<h6 class="fw-bold mb-2">Бөглөлтийн байдал</h6>';
-  for(const dk of visibleDepts){
-    const dus=allUsers.filter(u=>u.department===dk&&u.isActive);
-    if(!dus.length) continue;
-    const dSub=dus.filter(u=>!!reps[u.id]).length;
-    html+=`<div class="mb-2"><span class="fw-semibold" style="font-size:.85rem">${DEPT_NAMES[dk]}:</span>
-      <span class="ms-2 badge bg-success">${dSub} илгээсэн</span>
-      <span class="ms-1 badge bg-danger">${dus.length-dSub} хүлээгдэж байна</span>
-      <span class="ms-2" style="font-size:.8rem">`;
-    for(const u of dus){
-      const done=!!reps[u.id];
-      html+=`<span class="badge ${done?'bg-success':'bg-danger'} me-1">${u.rank} ${u.name}</span>`;
-    }
-    html+=`</span></div>`;
-  }
-  html+='<hr class="my-3">';
-
-  if(!Object.keys(reps).length){
-    html+='<div class="alert alert-info">Энэ 7 хоногт тайлан байхгүй байна.</div>';
-    body.innerHTML=html; return;
-  }
-
-  // ── Aggregated report per department ─────────────────────
-  for(const dk of visibleDepts){
-    const dUsers=allUsers.filter(u=>u.department===dk&&u.isActive);
-    const dReps=dUsers.map(u=>reps[u.id]).filter(Boolean);
-    if(!dReps.length) continue;
-
-    html+=`<h5 class="mt-4 mb-3 fw-bold" style="color:var(--brand);border-bottom:2px solid var(--brand);padding-bottom:6px">
-      <i class="bi bi-building me-2"></i>${DEPT_NAMES[dk]}
-    </h5>`;
-
-    // Group submitted reports by role
-    const roleMap={};
-    for(const r of dReps){
-      if(!roleMap[r.role]) roleMap[r.role]=[];
-      roleMap[r.role].push(r);
-    }
-
-    for(const [role, roleReps] of Object.entries(roleMap)){
-      const secs=ROLE_FORMS[role]||[];
-      const names=roleReps.map(r=>`${r.rank||''} ${r.userName||''}`).join(', ');
-
-      html+=`<div class="card mb-3">
-        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background:#f0f4ff;color:var(--brand)">
-          <span class="fw-semibold">${ROLE_LABELS[role]||role}</span>
-          <span class="text-muted" style="font-size:.8rem">${names}</span>
-        </div><div class="card-body pb-2">`;
-
-      // Numeric / table sections: aggregate across same-role members
-      for(const sec of secs){
-        if(sec.table){
-          html+=`<div class="sec-head">${sec.t}</div>
-            <div class="table-responsive mb-2"><table class="table table-sm table-bordered">
-            <thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th class="text-center">${c.l}${c.stack?'':('<br><small class="text-muted">'+c.u+'</small>')}</th>`).join('')}</tr></thead><tbody>`;
-          for(const cat of sec.cats){
-            const ck='tbl_'+catKey(cat)+'__';
-            html+=`<tr><td class="fw-semibold small">${cat}</td>`;
-            for(const col of sec.cols){
-              if(col.stack){
-                html+=`<td>`;
-                for(const sub of col.stack){
-                  const fid=ck+sub.id;
-                  let total=0;
-                  for(const r of roleReps) total+=(parseFloat((r.data||{})[fid])||0);
-                  html+=`<div class="text-center fw-semibold">${sub.l?`<small class="d-block text-muted" style="font-size:.7rem">${sub.l}</small>`:''}${total?total.toLocaleString():'—'} <small class="text-muted">${sub.u}</small></div>`;
-                }
-                html+=`</td>`;
-              } else {
-              const fid=ck+col.id;
-              let total=0;
-              for(const r of roleReps) total+=(parseFloat((r.data||{})[fid])||0);
-              html+=`<td class="text-center fw-semibold">${total?total.toLocaleString():'—'}</td>`;
-              }
-            }
-            html+=`</tr>`;
-          }
-          html+=`</tbody></table></div>`;
-          if(sec.lav_computed){
-            const getT=(cat,col)=>{const fid='tbl_'+catKey(cat)+'__'+col;return roleReps.reduce((s,r)=>s+(parseFloat((r.data||{})[fid])||0),0);};
-            const nonBank=['Нэг цэг','Орон нутаг','Төрийн эрх бүхий байгууллага','Хүсэлт'];
-            const c1=nonBank.reduce((s,c)=>s+getT(c,'irgen')+getT(c,'huuliin_etgeed'),0);
-            const c2=getT('Арилжааны банк','irgen')+getT('Арилжааны банк','huuliin_etgeed');
-            const c3=c1+c2;
-            html+=`<div class="row g-2 mb-2">
-              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Шүүхийн шийдвэрийн тодорхойлолт, лавлагаа олгосон</div><div class="fw-bold">${c1||'—'} ш</div></div>
-              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Арилжааны банкаар тулгаж хүргүүлсэн</div><div class="fw-bold">${c2||'—'} ш</div></div>
-              <div class="col-4"><div class="text-muted" style="font-size:.73rem">Нийт олгосон лавлагааны тоо</div><div class="fw-bold fs-6">${c3||'—'} ш</div></div>
-            </div>`;
-          }
-        } else {
-          const numFields=sec.f.filter(f=>!f.ta&&!f.negj);
-          const txtFields=sec.f.filter(f=>f.ta);
-          const negFields=sec.f.filter(f=>f.negj);
-          if(numFields.length){
-            html+=`<div class="sec-head">${sec.t}</div><div class="row g-2 mb-2">`;
-            for(const f of numFields){
-              let total=0; let hasAny=false;
-              for(const r of roleReps){
-                const v=(r.data||{})[f.id];
-                if(v!==undefined&&v!==''){total+=parseFloat(v)||0;hasAny=true;}
-              }
-              html+=`<div class="col-6 col-md-4 col-lg-3">
-                <div class="text-muted" style="font-size:.75rem">${f.l}</div>
-                <div class="fw-bold fs-6">${hasAny?total.toLocaleString():'—'} <span class="unit">${f.u}</span></div>
-              </div>`;
-            }
-            html+=`</div>`;
-          }
-          if(txtFields.length){
-            for(const f of txtFields){
-              const vals=roleReps.map(r=>{
-                const v=(r.data||{})[f.id];
-                return v?{name:`${r.rank||''} ${r.userName||''}`,text:v}:null;
-              }).filter(Boolean);
-              if(vals.length){
-                html+=`<div class="mb-2"><div class="fw-semibold small text-muted mb-1">${f.l}:</div>`;
-                for(const v of vals) html+=`<div class="ms-2 small mb-1"><strong>${v.name}:</strong> ${v.text}</div>`;
-                html+=`</div>`;
-              }
-            }
-          }
-          if(negFields.length){
-            for(const f of negFields){
-              const totals={};
-              for(const r of roleReps){
-                let rows=[];
-                try{if((r.data||{})[f.id]) rows=JSON.parse((r.data||{})[f.id]);}catch(e){}
-                for(const row of rows){if(row.n) totals[row.n]=(totals[row.n]||0)+(parseInt(row.t)||0);}
-              }
-              const entries=Object.entries(totals);
-              if(entries.length){
-                html+=`<div class="mb-2"><div class="fw-semibold small text-muted mb-1">${f.l}:</div>`;
-                for(const [negj,tot] of entries)
-                  html+=`<div class="ms-2 small mb-1">• <strong>${negj}:</strong> ${tot.toLocaleString()} ш</div>`;
-                html+=`</div>`;
-              }
-            }
-          }
-        }
-      }
-
-      // General report (хийсэн/хийх ажил)
-      const hasGeneral=roleReps.some(r=>{const d=r.data||{};return d.hiiseh_ajil||d.hiikh_ajil;});
-      if(hasGeneral){
-        html+=`<div class="sec-head">Ерөнхий тайлан</div>`;
-        for(const r of roleReps){
-          const d=r.data||{};
-          if(!d.hiiseh_ajil&&!d.hiikh_ajil) continue;
-          html+=`<div class="mb-2 p-2 rounded" style="background:#f8f9fa">
-            <div class="fw-semibold small mb-1">${r.rank||''} ${r.userName||''}:</div>`;
-          if(d.hiiseh_ajil) html+=`<div class="small"><span class="text-muted">Хийсэн:</span> ${d.hiiseh_ajil}</div>`;
-          if(d.hiikh_ajil) html+=`<div class="small"><span class="text-muted">Хийх:</span> ${d.hiikh_ajil}</div>`;
-          if(d.temdegleltar) html+=`<div class="small"><span class="text-muted">Тэмдэглэл:</span> ${d.temdegleltar}</div>`;
-          html+=`</div>`;
-        }
-      }
-
-      html+=`</div></div>`;
-    }
-
-    // People with no role form (head, general roles)
-    const noFormReps=dReps.filter(r=>(!ROLE_FORMS[r.role]||!ROLE_FORMS[r.role].length));
-    for(const r of noFormReps){
-      const d=r.data||{};
-      if(!d.hiiseh_ajil&&!d.hiikh_ajil) continue;
-      html+=`<div class="card mb-2"><div class="card-body py-2">
-        <div class="fw-semibold">${r.rank||''} ${r.userName||''} <span class="badge ms-1" style="background:var(--brand);font-size:.7rem">${ROLE_LABELS[r.role]||r.role}</span></div>`;
-      if(d.hiiseh_ajil) html+=`<div class="small mt-1"><span class="text-muted">Хийсэн:</span> ${d.hiiseh_ajil}</div>`;
-      if(d.hiikh_ajil) html+=`<div class="small"><span class="text-muted">Хийх:</span> ${d.hiikh_ajil}</div>`;
-      if(d.temdegleltar) html+=`<div class="small"><span class="text-muted">Тэмдэглэл:</span> ${d.temdegleltar}</div>`;
-      html+=`</div></div>`;
-    }
-  }
-
-  body.innerHTML=html;
-}
-
-
-// ── Admin ──────────────────────────────────────────────
-async function renderAdmin(){
-  await loadUsers(true);
-  const roleSelect=document.getElementById('a-role');
-  if(!roleSelect.options.length){
-    for(const [k,v] of Object.entries(ROLE_LABELS)){
-      const o=document.createElement('option'); o.value=k; o.textContent=v; roleSelect.appendChild(o);
-    }
-  }
-  let html='';
-  for(const u of allUsers){
-    html+=`<tr>
-      <td>${u.id}</td>
-      <td>${u.rank||''} ${u.name}</td>
-      <td style="font-size:.8rem">${DEPT_NAMES[u.department]||u.department}</td>
-      <td style="font-size:.8rem">${ROLE_LABELS[u.role]||u.role}</td>
-      <td>${u.isActive!==false?'<span class="badge bg-success">Идэвхтэй</span>':'<span class="badge bg-secondary">Идэвхгүй</span>'}</td>
-      <td>
-        <div class="d-flex flex-column gap-1">
-          <div class="d-flex gap-1">
-            <input type="text" class="form-control form-control-sm" id="rank-${u.id}" value="${u.rank||''}" style="width:50px;font-size:.8rem" placeholder="цол">
-            <input type="text" class="form-control form-control-sm" id="name-${u.id}" value="${u.name||''}" style="width:90px;font-size:.8rem" placeholder="нэр">
-            <button class="btn btn-sm btn-outline-secondary" onclick="changeRankName('${u.id}')"><i class="bi bi-check-lg"></i></button>
-          </div>
-        </div>
-      </td>
-      <td>
-        <select class="form-select form-select-sm" style="width:auto;font-size:.8rem" onchange="changeRole('${u.id}',this.value)">
-          ${Object.entries(ROLE_LABELS).map(([k,v])=>`<option value="${k}"${u.role===k?' selected':''}>${v}</option>`).join('')}
-        </select>
-      </td>
-      <td>
-        <div class="d-flex gap-1 align-items-center">
-          <input type="text" class="form-control form-control-sm" id="pass-${u.id}" placeholder="${u.password||'1234'}" style="width:70px;font-size:.8rem">
-          <button class="btn btn-sm btn-outline-primary" onclick="changePass('${u.id}')">Нууц үг</button>
-          <button class="btn btn-sm ${u.isActive!==false?'btn-outline-danger':'btn-outline-success'}" onclick="toggleActive('${u.id}',${u.isActive===false})">
-            ${u.isActive!==false?'Хаах':'Нээх'}
-          </button>
-        </div>
-      </td>
-    </tr>`;
-  }
-  document.getElementById('admin-users-table').innerHTML=html;
-}
-
-async function refreshReport(){
-  if(!currentWeek) return;
-  await loadWeekReports(currentWeek.start);
-  renderReportForm();
-  toast('Шинэчлэгдлээ ✓');
-}
-async function changeRankName(uid){
-  const rank=document.getElementById('rank-'+uid).value.trim();
-  const name=document.getElementById('name-'+uid).value.trim();
-  if(!name){toast('Нэр хоосон байна',false);return;}
-  await updateDoc(doc(db,'users',uid),{rank,name});
-  const u=allUsers.find(x=>x.id===uid); if(u){u.rank=rank;u.name=name;}
-  toast('Цол/Нэр засагдлаа ✓');
-  renderAdmin(); populateLoginSelect();
-}
-async function changeRole(uid,newRole){
-  await updateDoc(doc(db,'users',uid),{role:newRole});
-  const u=allUsers.find(x=>x.id===uid); if(u) u.role=newRole;
-  toast('Үүрэг өөрчлөгдлөө ✓');
-}
-async function changePass(uid){
-  const inp=document.getElementById('pass-'+uid);
-  const np=inp.value.trim(); if(!np){toast('Нууц үг хоосон',false);return;}
-  await updateDoc(doc(db,'users',uid),{password:np});
-  const u=allUsers.find(x=>x.id===uid); if(u) u.password=np;
-  inp.value=''; inp.placeholder=np;
-  toast('Нууц үг солигдлоо ✓');
-}
-async function toggleActive(uid,active){
-  await updateDoc(doc(db,'users',uid),{isActive:active});
-  const u=allUsers.find(x=>x.id===uid); if(u) u.isActive=active;
-  renderAdmin(); populateLoginSelect();
-  toast(active?'Идэвхжүүллээ ✓':'Хаалаа ✓');
-}
-async function changeAdminPass(e){
-  e.preventDefault();
-  const inp=document.getElementById('new-admin-pass');
-  const np=inp.value.trim(); if(!np) return;
-  await setDoc(doc(db,'settings','admin'),{password:np});
-  inp.value=''; toast('Admin нууц үг солигдлоо ✓');
-}
-async function adminAddUser(e){
-  e.preventDefault();
-  const rank=document.getElementById('a-rank').value.trim();
-  const name=document.getElementById('a-name').value.trim();
-  const dept=document.getElementById('a-dept').value;
-  const role=document.getElementById('a-role').value;
-  const pass=document.getElementById('a-pass').value.trim()||'1234';
-  if(!name){toast('Нэр оруулна уу',false);return;}
-  await loadUsers(true);
-  const newId=String(Math.max(0,...allUsers.map(u=>Number(u.id)||0))+1);
-  await setDoc(doc(db,'users',newId),{name,rank,department:dept,role,isActive:true,password:pass,createdAt:serverTimestamp()});
-  ['a-rank','a-name','a-pass'].forEach(id=>{document.getElementById(id).value='';});
-  toast(`${rank} ${name} нэмэгдлээ ✓`);
-  await loadUsers(true); renderAdmin(); populateLoginSelect();
-}
-
-// ── Startup ─────────────────────────────────────────────
-seedUsers().then(()=>populateLoginSelect());
-</script>
-</body>
-</html>
+ 
