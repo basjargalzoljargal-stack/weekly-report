@@ -1267,15 +1267,32 @@ async function submitReport(){
   btn.disabled=false; btn.innerHTML='<i class="bi bi-send me-1"></i>Илгээх';
 }
 
+// ── Populate week selector ──────────────────────────────
+function populateWeekSelector(){
+  const sel=document.getElementById('week-selector');
+  if(!sel) return;
+  if(sel.options.length>0) return; // already populated
+  for(let i=0;i<12;i++){
+    const w=weekDates(-i);
+    const opt=document.createElement('option');
+    opt.value=w.start;
+    opt.textContent=(i===0?'Энэ 7 хоног: ':'')+(i===1?'Өмнөх 7 хоног: ':'')+fmtWeek(w.start,w.end);
+    sel.appendChild(opt);
+  }
+}
+
 // ── Consolidated view ───────────────────────────────────
 async function loadConsolidated(){
   const el=document.getElementById('view-consolidated');
   if(!el) return;
-  const w=currentWeek||weekDates();
-  document.querySelectorAll('.cons-week-label').forEach(e=>e.textContent=fmtWeek(w.start,w.end));
+  populateWeekSelector();
+  const sel=document.getElementById('week-selector');
+  const weekStart=sel&&sel.value?sel.value:(currentWeek||weekDates()).start;
+  const weekEnd=sel&&sel.value?(()=>{const d=new Date(sel.value);d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);})():(currentWeek||weekDates()).end;
+  document.getElementById('cons-week-label').textContent=fmtWeek(weekStart,weekEnd);
   el.querySelector('#cons-body').innerHTML='<div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>';
   await loadUsers();
-  await loadWeekReports(w.start);
+  await loadWeekReports(weekStart);
   let html='';
   const depts=DEPT_ORDER;
   for(const dk of depts){
