@@ -495,10 +495,11 @@ p,span,td,th,li,label{color:inherit}
   <div class="row justify-content-center">
    <div class="col-lg-9">
     <div class="card">
-     <div class="card-header d-flex justify-content-between align-items-center">
+     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span id="report-title">Тайлан</span>
-      <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex gap-2 align-items-center flex-wrap">
        <span class="text-white-50 small" id="report-week-label"></span>
+       <select id="report-week-sel" class="form-select form-select-sm" onchange="onReportWeekChange()" style="width:auto;background:#0d1526;color:#eef2ff;border-color:#26395a;font-size:.8rem"></select>
        <button class="btn btn-sm btn-outline-light" onclick="refreshReport()" title="Шинэчлэх"><i class="bi bi-arrow-clockwise"></i></button>
        <button class="btn btn-sm btn-outline-light" onclick="showView('home')"><i class="bi bi-arrow-left"></i></button>
       </div>
@@ -1068,6 +1069,7 @@ window.openDailyLog=openDailyLog;
 window.exitDailyMode=exitDailyMode;
 window.aggregateDailyToWeekly=aggregateDailyToWeekly;
 window.showAggregateConfirm=showAggregateConfirm;
+window.onReportWeekChange=onReportWeekChange;
 
 // ── Login ──────────────────────────────────────────────
 async function populateLoginSelect(){
@@ -1348,6 +1350,21 @@ function renderReportForm(){
   document.getElementById('report-title').innerHTML=
     `<i class="bi bi-pencil-square me-2"></i>${u.rank} ${u.name}
      <span class="badge ms-2" style="background:rgba(255,255,255,.2);font-size:.72rem">${ROLE_LABELS[u.role]||u.role}</span>`;
+  // Populate & sync week selector
+  const wSel=document.getElementById('report-week-sel');
+  if(wSel){
+    if(wSel.options.length===0){
+      for(let i=0;i<8;i++){
+        const w=weekDates(-i);
+        const opt=document.createElement('option');
+        opt.value=w.start;
+        opt.textContent=(i===0?'Энэ 7 хоног: ':'')+(i===1?'Өмнөх 7 хоног: ':'')+fmtWeek(w.start,w.end);
+        wSel.appendChild(opt);
+      }
+    }
+    wSel.value=currentWeek?currentWeek.start:'';
+    wSel.style.display=dailyDate?'none':'';
+  }
   if(dailyDate){
     document.getElementById('report-week-label').textContent='';
     const dd=document.getElementById('daily-date-display');
@@ -1361,7 +1378,7 @@ function renderReportForm(){
     const sb=document.getElementById('submit-btn');
     if(sb) sb.innerHTML='<i class="bi bi-floppy me-1"></i>Тэмдэглэл хадгалах';
   } else {
-    document.getElementById('report-week-label').textContent=fmtWeek(currentWeek.start,currentWeek.end);
+    document.getElementById('report-week-label').textContent='';
     const dmb=document.getElementById('daily-mode-banner');
     if(dmb) dmb.style.display='none';
     const daw=document.getElementById('daily-aggregate-wrap');
@@ -1743,10 +1760,22 @@ async function showAggregateConfirm(){
   await aggregateDailyToWeekly();
 }
 
+async function onReportWeekChange(){
+  const sel=document.getElementById('report-week-sel');
+  if(!sel||!sel.value) return;
+  const start=sel.value;
+  const d=new Date(start); d.setDate(d.getDate()+6);
+  const end=d.toISOString().slice(0,10);
+  currentWeek={start,end};
+  dailyDate=null;
+  dailyLogs={};
+  await loadWeekReports(start);
+  renderReportForm();
+}
+
 async function aggregateDailyToWeekly(){
   if(!currentWeek||!currentUser) return;
   try{
-    // Load all daily logs for current week
     const {start,end}=currentWeek;
     const snap=await getDocs(query(
       collection(db,'daily_logs'),
@@ -1755,27 +1784,39 @@ async function aggregateDailyToWeekly(){
       where('date','<=',end)
     ));
     if(snap.empty){ toast('Энэ 7 хоногт өдрийн тэмдэглэл байхгүй байна',false); return; }
-    const allData=[];
-    const notes=[];
+    // Sort by date
+    const entries=[];
     snap.forEach(docSnap=>{
       const dd=docSnap.data();
       dailyLogs[dd.date]=dd;
-      allData.push(dd.data||{});
-      if((dd.data||{}).hiiseh_ogdor) notes.push(`[${dd.date}] ${dd.data.hiiseh_ogdor}`);
+      entries.push({date:dd.date,data:dd.data||{}});
     });
+    entries.sort((a,b)=>a.date.localeCompare(b.date));
+    const allData=entries.map(e=>e.data);
     const role=currentUser.role;
     const aggD=aggDataObjs(role,allData);
+    // Concatenate daily work notes
+    const notes=entries.filter(e=>e.data.hiiseh_ogdor).map(e=>`[${e.date}] ${e.data.hiiseh_ogdor}`);
     if(notes.length) aggD.hiiseh_ajil=notes.join('\n\n');
-    // Merge into existing weekly report data
-    const ex=allReports[currentUser.id]||{};
-    allReports[currentUser.id]={...ex,data:{...(ex.data||{}),...aggD}};
+    // Concatenate other textarea fields (f.ta) per role
+    const secs=ROLE_FORMS[role]||[];
+    for(const sec of secs){
+      if(sec.f){
+        for(const f of sec.f){
+          if(f.ta){
+            const parts=entries.filter(e=>e.data[f.id]).map(e=>`[${e.date}] ${e.data[f.id]}`);
+            if(parts.length) aggD[f.id]=parts.join('\n\n');
+          }
+        }
+      }
+    }
+    // Merge into weekly report cache and re-render
     dailyDate=null;
-    await loadWeekReports(currentWeek.start);
-    // Re-apply aggregated data
-    allReports[currentUser.id]={...allReports[currentUser.id],data:{...(allReports[currentUser.id]?.data||{}),...aggD}};
+    await loadWeekReports(start);
+    allReports[currentUser.id]={...(allReports[currentUser.id]||{}),data:{...((allReports[currentUser.id]||{}).data||{}),...aggD}};
     renderReportForm();
     showView('report');
-    toast(`${snap.size} өдрийн тэмдэглэлийг нэгтгэлээ ✓ Шалгаад илгээнэ үү`);
+    toast(`${snap.size} өдрийн тэмдэглэлийг нэгтгэлээ ✓ Шалгаад тоонуудаа нягтлаад илгээнэ үү`);
   }catch(ex){ toast('Алдаа: '+ex.message,false); }
 }
 
