@@ -460,7 +460,8 @@ p,span,td,th,li,label{color:inherit}
       <span class="nav-username" id="nav-username"></span>
       <button class="nav-pill" onclick="showView('home')"><i class="bi bi-house me-1"></i>Нүүр</button>
       <button class="nav-pill d-none" id="nav-consolidated-btn" onclick="showView('consolidated')"><i class="bi bi-bar-chart me-1"></i>Нэгтгэл</button>
-      <button class="nav-pill d-none" id="nav-daily-btn" onclick="showDailyPicker()"><i class="bi bi-calendar-day me-1"></i>Өдрийн тэмдэглэл</button>
+      <button class="nav-pill d-none" id="nav-daily-btn" onclick="enterDailyMode()"><i class="bi bi-calendar-day me-1"></i>Өдрийн тэмдэглэл</button>
+      <button class="nav-pill d-none" id="nav-head-daily-btn" onclick="showView('head-daily')"><i class="bi bi-people me-1"></i>Ажилтны өдрийн мэдээ</button>
       <button class="nav-pill d-none" id="nav-admin-btn" onclick="showView('admin')"><i class="bi bi-gear me-1"></i>Admin</button>
       <button class="nav-pill nav-pill-gold" onclick="doLogout()"><i class="bi bi-box-arrow-right me-1"></i>Гарах</button>
     </div>
@@ -492,8 +493,29 @@ p,span,td,th,li,label{color:inherit}
 
 <!-- REPORT -->
 <div id="view-report" class="view">
-  <div class="row justify-content-center">
-   <div class="col-lg-9">
+  <div class="row g-3 justify-content-center" id="report-row">
+   <!-- Daily sidebar (hidden in weekly mode) -->
+   <div class="col-lg-3 col-md-4" id="daily-sidebar" style="display:none">
+    <div class="card" style="position:sticky;top:72px">
+     <div class="card-header" style="padding:.55rem .8rem">
+      <span style="color:#00d4ff;font-size:.82rem;font-weight:600"><i class="bi bi-calendar3 me-1"></i>Өдрийн тэмдэглэл</span>
+     </div>
+     <div class="card-body p-2">
+      <select class="form-select form-select-sm mb-2" id="daily-sidebar-week" onchange="onDailySidebarWeekChange()" style="background:#0d1526;color:#eef2ff;border-color:#26395a;font-size:.78rem"></select>
+      <div id="daily-day-list" class="d-flex flex-column gap-1"></div>
+     </div>
+     <div class="card-footer p-2 d-flex flex-column gap-1">
+      <button type="button" onclick="aggregateDailyToWeekly()" class="btn btn-sm w-100" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);color:#34d399;font-size:.78rem">
+       <i class="bi bi-lightning-charge me-1"></i>7 хоногт нэгтгэх
+      </button>
+      <button type="button" onclick="exitDailyMode()" class="btn btn-sm w-100" style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.35);color:#a78bfa;font-size:.78rem">
+       <i class="bi bi-calendar-week me-1"></i>7 хоногийн тайланд буцах
+      </button>
+     </div>
+    </div>
+   </div>
+   <!-- Main report column -->
+   <div class="col-lg-9" id="report-main-col">
     <div class="card">
      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span id="report-title">Тайлан</span>
@@ -507,20 +529,9 @@ p,span,td,th,li,label{color:inherit}
      <div class="card-body">
       <div id="report-behalf-info"></div>
       <div id="report-submitted-info"></div>
-      <!-- Daily mode banner -->
-      <div id="daily-mode-banner" style="display:none" class="mb-3 p-2 rounded d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25)">
-       <span style="color:#00d4ff;font-size:.88rem"><i class="bi bi-calendar-day me-1"></i>Өдрийн горим — <strong id="daily-date-display"></strong></span>
-       <button type="button" class="btn btn-sm" onclick="exitDailyMode()" style="background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);color:#a78bfa;font-size:.78rem"><i class="bi bi-calendar-week me-1"></i>7 хоногийн тайланд буцах</button>
-      </div>
-      <!-- Aggregate from daily button (weekly mode only) -->
-      <div id="daily-aggregate-wrap" class="mb-3" style="display:none">
-       <button type="button" onclick="aggregateDailyToWeekly()" class="btn btn-sm" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.35);color:#00d4ff">
-        <i class="bi bi-lightning-charge me-1"></i>Өдрийн тэмдэглэлээс авто нэгтгэх
-       </button>
-      </div>
       <form id="report-form" onsubmit="submitReport(event)">
        <div id="report-fields"></div>
-       <div class="d-flex gap-2 mt-4 flex-wrap">
+       <div class="d-flex gap-2 mt-4 flex-wrap" id="report-submit-area">
         <button type="submit" class="btn px-4" id="submit-btn">
          <i class="bi bi-send me-1"></i>Илгээх
         </button>
@@ -547,6 +558,36 @@ p,span,td,th,li,label{color:inherit}
      </div>
      <div class="card-body" id="cons-body">
       <div class="spinner-wrap"><div class="spinner-border text-primary"></div></div>
+     </div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<!-- HEAD DAILY VIEW -->
+<div id="view-head-daily" class="view">
+  <div class="row g-3">
+   <div class="col-lg-3 col-md-4">
+    <div class="card" style="position:sticky;top:72px">
+     <div class="card-header" style="padding:.55rem .8rem">
+      <span style="color:#00d4ff;font-size:.82rem;font-weight:600"><i class="bi bi-people me-1"></i>Ажилтны өдрийн мэдээ</span>
+     </div>
+     <div class="card-body p-2">
+      <select class="form-select form-select-sm mb-2" id="hd-sidebar-week" onchange="onHdSidebarWeekChange()" style="background:#0d1526;color:#eef2ff;border-color:#26395a;font-size:.78rem"></select>
+      <div id="hd-day-list" class="d-flex flex-column gap-1"></div>
+     </div>
+     <div class="card-footer p-2">
+      <button type="button" onclick="showView('home')" class="btn btn-sm w-100" style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.35);color:#a78bfa;font-size:.78rem">
+       <i class="bi bi-arrow-left me-1"></i>Буцах
+      </button>
+     </div>
+    </div>
+   </div>
+   <div class="col-lg-9">
+    <div id="hd-content">
+     <div class="text-center py-5" style="color:#4a6080">
+      <i class="bi bi-hand-index-thumb" style="font-size:2rem;color:#00d4ff"></i>
+      <div class="mt-3" style="font-size:.95rem">Зүүн талаас өдрөө сонгоно уу</div>
      </div>
     </div>
    </div>
@@ -1023,6 +1064,8 @@ function removeNegjiRow(btn){
 let currentUser=null, currentWeek=null, allUsers=[], allReports={};
 let loggedInUser=null, isAdmin=false;
 let dailyDate=null, dailyLogs={};
+let isDailyMode=false;
+let hdWeek=null, hdDate=null;
 const ADMIN_DEFAULT_PASS='admin2026';
 
 window.showView=showView;
@@ -1049,10 +1092,14 @@ window.computeLavSums=computeLavSums;
 window.computeMedeeSums=computeMedeeSums;
 window.showDailyPicker=showDailyPicker;
 window.openDailyLog=openDailyLog;
+window.enterDailyMode=enterDailyMode;
 window.exitDailyMode=exitDailyMode;
+window.selectDailyDay=selectDailyDay;
+window.onDailySidebarWeekChange=onDailySidebarWeekChange;
 window.aggregateDailyToWeekly=aggregateDailyToWeekly;
 window.showAggregateConfirm=showAggregateConfirm;
 window.onReportWeekChange=onReportWeekChange;
+window.onHdSidebarWeekChange=onHdSidebarWeekChange;
 
 // ── Login ──────────────────────────────────────────────
 async function populateLoginSelect(){
@@ -1119,10 +1166,12 @@ async function enterApp(){
   // Өдрийн тэмдэглэл: зөвхөн энгийн алба хаагчид (head болон admin биш)
   const canSeeDaily = !isAdmin && loggedInUser.role!=='head';
   document.getElementById('nav-daily-btn').classList.toggle('d-none', !canSeeDaily);
+  const canSeeHeadDaily = !isAdmin && loggedInUser.role==='head';
+  document.getElementById('nav-head-daily-btn').classList.toggle('d-none', !canSeeHeadDaily);
   if(isAdmin){ showView('admin'); return; }
   if(!currentWeek){ currentWeek=weekDates(); }
   currentUser=loggedInUser;
-  dailyDate=null; dailyLogs={};
+  isDailyMode=false; dailyDate=null; dailyLogs={};
   if(loggedInUser.role==='head'){ showView('home'); return; }
   await loadWeekReports(currentWeek.start);
   renderReportForm();
@@ -1138,13 +1187,14 @@ function doLogout(){
 }
 
 function showView(name){
-  // Нэгтгэл: зөвхөн admin эсвэл дарга
   if(name==='consolidated' && !isAdmin && loggedInUser?.role!=='head') return;
+  if(name==='head-daily' && !isAdmin && loggedInUser?.role!=='head') return;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   if(name==='home') renderHome();
   if(name==='consolidated') loadConsolidated();
   if(name==='admin') renderAdmin();
+  if(name==='head-daily') initHeadDailyView();
 }
 
 // ── Seed users ─────────────────────────────────────────
@@ -1333,7 +1383,13 @@ function renderReportForm(){
   document.getElementById('report-title').innerHTML=
     `<i class="bi bi-pencil-square me-2"></i>${u.rank} ${u.name}
      <span class="badge ms-2" style="background:rgba(255,255,255,.2);font-size:.72rem">${ROLE_LABELS[u.role]||u.role}</span>`;
-  // Populate & sync week selector
+  // Sidebar: show in daily mode, hide in weekly mode
+  const sidebar=document.getElementById('daily-sidebar');
+  if(sidebar) sidebar.style.display=isDailyMode?'':'none';
+  const mainCol=document.getElementById('report-main-col');
+  if(mainCol) mainCol.className=isDailyMode?'col-lg-9':'col-lg-9 mx-auto';
+  if(isDailyMode){ populateDailySidebarWeek(); renderDayButtons(); }
+  // Week selector (hidden in daily mode)
   const wSel=document.getElementById('report-week-sel');
   if(wSel){
     if(wSel.options.length===0){
@@ -1346,24 +1402,27 @@ function renderReportForm(){
       }
     }
     wSel.value=currentWeek?currentWeek.start:'';
-    wSel.style.display=dailyDate?'none':'';
+    wSel.style.display=isDailyMode?'none':'';
   }
-  if(dailyDate){
+  // Daily mode — no day selected yet: show placeholder
+  if(isDailyMode && !dailyDate){
+    document.getElementById('report-title').innerHTML=`<i class="bi bi-calendar-day me-2"></i>Өдрийн тэмдэглэл`;
     document.getElementById('report-week-label').textContent='';
-    const dd=document.getElementById('daily-date-display');
-    if(dd) dd.textContent=dailyDate;
-    const dmb=document.getElementById('daily-mode-banner');
-    if(dmb) dmb.style.display='';
-    const daw=document.getElementById('daily-aggregate-wrap');
-    if(daw) daw.style.display='none';
+    document.getElementById('report-behalf-info').innerHTML='';
+    document.getElementById('report-submitted-info').innerHTML='';
+    document.getElementById('report-fields').innerHTML=`<div class="text-center py-5" style="color:#4a6080"><i class="bi bi-hand-index-thumb" style="font-size:2rem;color:#00d4ff"></i><div class="mt-3">Зүүн талаас өдрөө сонгоно уу</div></div>`;
+    const sa=document.getElementById('report-submit-area');
+    if(sa) sa.style.display='none';
+    return;
+  }
+  const sa=document.getElementById('report-submit-area');
+  if(sa) sa.style.display='';
+  if(dailyDate){
+    document.getElementById('report-week-label').textContent=dailyDate;
     const sb=document.getElementById('submit-btn');
     if(sb) sb.innerHTML='<i class="bi bi-floppy me-1"></i>Тэмдэглэл хадгалах';
   } else {
     document.getElementById('report-week-label').textContent='';
-    const dmb=document.getElementById('daily-mode-banner');
-    if(dmb) dmb.style.display='none';
-    const daw=document.getElementById('daily-aggregate-wrap');
-    if(daw) daw.style.display=(loggedInUser&&loggedInUser.role!=='head'&&!isAdmin)?'':'none';
     const sb=document.getElementById('submit-btn');
     if(sb) sb.innerHTML='<i class="bi bi-send me-1"></i>Илгээх';
   }
@@ -1691,52 +1750,208 @@ async function submitReport(e){
   btn.disabled=false; btn.innerHTML='<i class="bi bi-send me-1"></i>Илгээх';
 }
 
-// ── Daily log functions ─────────────────────────────────
-function showDailyPicker(){
+// ── Daily log two-panel functions ───────────────────────
+async function enterDailyMode(){
   if(!currentWeek) currentWeek=weekDates();
-  const sel=document.getElementById('daily-date-input');
-  sel.innerHTML='';
-  const start=new Date(currentWeek.start);
-  const todayStr=new Date().toISOString().slice(0,10);
-  const dayNames=['Ням','Дав','Мяг','Лха','Пүр','Баа','Бям'];
-  for(let i=0;i<7;i++){
-    const d=new Date(start); d.setDate(d.getDate()+i);
-    const dStr=d.toISOString().slice(0,10);
-    const opt=document.createElement('option');
-    opt.value=dStr;
-    const loaded=dailyLogs[dStr]?'✓ ':'';
-    opt.textContent=`${loaded}${dStr} (${dayNames[d.getDay()]})`;
-    if(dStr===todayStr) opt.selected=true;
-    sel.appendChild(opt);
-  }
-  new bootstrap.Modal(document.getElementById('dailyPickerModal')).show();
-}
-
-async function openDailyLog(){
-  const date=document.getElementById('daily-date-input').value;
-  bootstrap.Modal.getInstance(document.getElementById('dailyPickerModal'))?.hide();
-  dailyDate=date;
-  // Load daily log from Firestore if not cached
-  if(!dailyLogs[date]){
-    try{
-      const rid=`${currentUser.id}_${date}`;
-      const snap=await getDoc(doc(db,'daily_logs',rid));
-      if(snap.exists()) dailyLogs[date]=snap.data();
-    }catch(e){}
-  }
+  isDailyMode=true; dailyDate=null; dailyLogs={};
+  try{
+    const snap=await getDocs(query(collection(db,'daily_logs'),
+      where('userId','==',currentUser.id),
+      where('date','>=',currentWeek.start),
+      where('date','<=',currentWeek.end)));
+    snap.forEach(d=>{ dailyLogs[d.data().date]=d.data(); });
+  }catch(e){}
   await loadWeekReports(currentWeek.start);
   renderReportForm();
   showView('report');
 }
 
 function exitDailyMode(){
-  dailyDate=null;
+  isDailyMode=false; dailyDate=null;
   renderReportForm();
 }
 
-async function showAggregateConfirm(){
-  bootstrap.Modal.getInstance(document.getElementById('dailyPickerModal'))?.hide();
-  await aggregateDailyToWeekly();
+function populateDailySidebarWeek(){
+  const sel=document.getElementById('daily-sidebar-week');
+  if(!sel) return;
+  if(sel.options.length===0){
+    for(let i=0;i<8;i++){
+      const w=weekDates(-i);
+      const opt=document.createElement('option');
+      opt.value=w.start+'|'+w.end;
+      opt.textContent=(i===0?'Энэ 7 хоног: ':'')+(i===1?'Өмнөх 7 хоног: ':'')+fmtWeek(w.start,w.end);
+      sel.appendChild(opt);
+    }
+  }
+  if(currentWeek) sel.value=currentWeek.start+'|'+currentWeek.end;
+}
+
+function renderDayButtons(){
+  const container=document.getElementById('daily-day-list');
+  if(!container||!currentWeek) return;
+  const dayNames=['Ням','Дав','Мяг','Лха','Пүр','Баа','Бям'];
+  const todayStr=new Date().toISOString().slice(0,10);
+  const start=new Date(currentWeek.start);
+  container.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const dStr=d.toISOString().slice(0,10);
+    const hasLog=!!dailyLogs[dStr];
+    const isSelected=dailyDate===dStr;
+    const isToday=dStr===todayStr;
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='btn btn-sm text-start w-100';
+    btn.style.cssText='font-size:.78rem;padding:.35rem .6rem;border-radius:8px;'
+      +'background:'+(isSelected?'rgba(0,212,255,.2)':'rgba(255,255,255,.04)')+';'
+      +'border:1px solid '+(isSelected?'rgba(0,212,255,.5)':isToday?'rgba(0,212,255,.25)':'rgba(255,255,255,.08)')+';'
+      +'color:'+(isSelected?'#00d4ff':isToday?'#7dd3fc':'#8aaace')+';';
+    btn.innerHTML='<span style="display:inline-block;width:22px;font-size:.7rem;opacity:.7">'+dayNames[d.getDay()]+'</span>'
+      +'<span>'+dStr.slice(5)+'</span>'
+      +(hasLog?'<i class="bi bi-check-circle-fill ms-1" style="color:#10b981;font-size:.7rem"></i>':'');
+    btn.onclick=(function(s){ return function(){ selectDailyDay(s); }; })(dStr);
+    container.appendChild(btn);
+  }
+}
+
+async function selectDailyDay(date){
+  dailyDate=date;
+  if(!dailyLogs[date]){
+    try{
+      const snap=await getDoc(doc(db,'daily_logs',currentUser.id+'_'+date));
+      if(snap.exists()) dailyLogs[date]=snap.data();
+    }catch(e){}
+  }
+  renderReportForm();
+}
+
+async function onDailySidebarWeekChange(){
+  const sel=document.getElementById('daily-sidebar-week');
+  if(!sel||!sel.value) return;
+  const parts=sel.value.split('|');
+  const start=parts[0], end=parts[1];
+  currentWeek={start,end};
+  dailyDate=null; dailyLogs={};
+  try{
+    const snap=await getDocs(query(collection(db,'daily_logs'),
+      where('userId','==',currentUser.id),
+      where('date','>=',start),
+      where('date','<=',end)));
+    snap.forEach(d=>{ dailyLogs[d.data().date]=d.data(); });
+  }catch(e){}
+  const wSel=document.getElementById('report-week-sel');
+  if(wSel) wSel.innerHTML='';
+  renderReportForm();
+}
+
+// Legacy aliases
+function showDailyPicker(){ enterDailyMode(); }
+async function openDailyLog(){ enterDailyMode(); }
+async function showAggregateConfirm(){ await aggregateDailyToWeekly(); }
+
+// ── Head daily view ──────────────────────────────────────
+function initHeadDailyView(){
+  if(!hdWeek) hdWeek=weekDates();
+  populateHdSidebarWeek();
+  renderHdDayButtons();
+  if(hdDate) loadHdDayLogs(hdDate);
+  else document.getElementById('hd-content').innerHTML='<div class="text-center py-5" style="color:#4a6080"><i class="bi bi-hand-index-thumb" style="font-size:2rem;color:#00d4ff"></i><div class="mt-3">Зүүн талаас өдрөө сонгоно уу</div></div>';
+}
+
+function populateHdSidebarWeek(){
+  const sel=document.getElementById('hd-sidebar-week');
+  if(!sel) return;
+  sel.innerHTML='';
+  for(let i=0;i<8;i++){
+    const w=weekDates(-i);
+    const opt=document.createElement('option');
+    opt.value=w.start+'|'+w.end;
+    opt.textContent=(i===0?'Энэ 7 хоног: ':'')+(i===1?'Өмнөх 7 хоног: ':'')+fmtWeek(w.start,w.end);
+    sel.appendChild(opt);
+  }
+  if(hdWeek) sel.value=hdWeek.start+'|'+hdWeek.end;
+}
+
+function renderHdDayButtons(){
+  const container=document.getElementById('hd-day-list');
+  if(!container||!hdWeek) return;
+  const dayNames=['Ням','Дав','Мяг','Лха','Пүр','Баа','Бям'];
+  const todayStr=new Date().toISOString().slice(0,10);
+  const start=new Date(hdWeek.start);
+  container.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const dStr=d.toISOString().slice(0,10);
+    const isSelected=hdDate===dStr;
+    const isToday=dStr===todayStr;
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='btn btn-sm text-start w-100';
+    btn.style.cssText='font-size:.78rem;padding:.35rem .6rem;border-radius:8px;'
+      +'background:'+(isSelected?'rgba(0,212,255,.2)':'rgba(255,255,255,.04)')+';'
+      +'border:1px solid '+(isSelected?'rgba(0,212,255,.5)':isToday?'rgba(0,212,255,.25)':'rgba(255,255,255,.08)')+';'
+      +'color:'+(isSelected?'#00d4ff':isToday?'#7dd3fc':'#8aaace')+';';
+    btn.innerHTML='<span style="display:inline-block;width:22px;font-size:.7rem;opacity:.7">'+dayNames[d.getDay()]+'</span><span>'+dStr.slice(5)+'</span>';
+    btn.onclick=(function(s){ return function(){ window.selectHdDay(s); }; })(dStr);
+    container.appendChild(btn);
+  }
+}
+
+window.selectHdDay=async function(date){
+  hdDate=date;
+  renderHdDayButtons();
+  await loadHdDayLogs(date);
+};
+
+async function onHdSidebarWeekChange(){
+  const sel=document.getElementById('hd-sidebar-week');
+  if(!sel||!sel.value) return;
+  const parts=sel.value.split('|');
+  hdWeek={start:parts[0],end:parts[1]}; hdDate=null;
+  renderHdDayButtons();
+  document.getElementById('hd-content').innerHTML='<div class="text-center py-5" style="color:#4a6080"><i class="bi bi-hand-index-thumb" style="font-size:2rem;color:#00d4ff"></i><div class="mt-3">Зүүн талаас өдрөө сонгоно уу</div></div>';
+}
+
+async function loadHdDayLogs(date){
+  const content=document.getElementById('hd-content');
+  if(!content) return;
+  content.innerHTML='<div class="text-center py-4" style="color:#4a6080"><div class="spinner-border spinner-border-sm me-2"></div>Уншиж байна...</div>';
+  try{
+    const deptUsers=allUsers.filter(function(u){ return u.department===loggedInUser.department&&u.role!=='head'&&u.isActive; });
+    if(!deptUsers.length){ content.innerHTML='<div class="card"><div class="card-body text-center" style="color:#4a6080">Хэлтэсд алба хаагч олдсонгүй</div></div>'; return; }
+    const logs={};
+    for(let i=0;i<deptUsers.length;i++){
+      const u=deptUsers[i];
+      try{
+        const snap=await getDoc(doc(db,'daily_logs',u.id+'_'+date));
+        if(snap.exists()) logs[u.id]=snap.data();
+      }catch(e){}
+    }
+    let html='<div class="mb-3" style="color:#8aaace;font-size:.82rem"><i class="bi bi-calendar-day me-1"></i>'+date+' — хэлтсийн ажилтнуудын өдрийн тэмдэглэл</div>';
+    for(let i=0;i<deptUsers.length;i++){
+      const u=deptUsers[i];
+      const log=logs[u.id];
+      html+='<div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center" style="padding:.5rem .9rem">'
+        +'<span style="font-weight:600;font-size:.9rem">'+u.rank+' '+u.name+'</span>'
+        +(log
+          ?'<span class="badge" style="background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.4)"><i class="bi bi-check-circle me-1"></i>Бүртгэсэн</span>'
+          :'<span class="badge" style="background:rgba(244,63,94,.1);color:#f43f5e;border:1px solid rgba(244,63,94,.3)"><i class="bi bi-x-circle me-1"></i>Бүртгээгүй</span>')
+        +'</div>';
+      if(log){
+        const d=log.data||{};
+        const text=d['hiiseh_ogdor']||'';
+        const extras=Object.entries(d).filter(function(kv){ return kv[0]!=='hiiseh_ogdor'&&String(kv[1]).trim()&&String(kv[1])!=='0'; });
+        html+='<div class="card-body" style="font-size:.88rem">';
+        if(text) html+='<div class="mb-2"><div style="color:#4a6080;font-size:.75rem;margin-bottom:4px">Хийсэн ажил:</div><div style="white-space:pre-wrap;color:#eef2ff">'+text.replace(/</g,'&lt;')+'</div></div>';
+        if(extras.length) html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+extras.slice(0,8).map(function(kv){ return '<span style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:2px 8px;font-size:.75rem;color:#7dd3fc">'+kv[0]+': '+kv[1]+'</span>'; }).join('')+'</div>';
+        html+='</div>';
+      } else {
+        html+='<div class="card-body" style="color:#3a5070;font-size:.85rem;font-style:italic">Өдрийн тэмдэглэл бүртгэгдээгүй байна</div>';
+      }
+      html+='</div>';
+    }
+    content.innerHTML=html;
+  }catch(e){ content.innerHTML='<div class="alert alert-danger">Алдаа: '+e.message+'</div>'; }
 }
 
 async function onReportWeekChange(){
