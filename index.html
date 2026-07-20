@@ -520,23 +520,6 @@ p,span,td,th,li,label{color:inherit}
       </div>
       <form id="report-form" onsubmit="submitReport(event)">
        <div id="report-fields"></div>
-       <div id="report-general-section">
-       <div class="sec-head mt-4"><i class="bi bi-list-check me-1"></i>Ерөнхий тайлан</div>
-       <div class="row g-3">
-        <div class="col-12">
-         <label class="form-label fw-semibold">Энэ 7 хоногт хийсэн ажил</label>
-         <textarea class="form-control" id="f-hiiseh" name="hiiseh_ajil" rows="5" placeholder="Хийсэн ажлаа бичнэ үү..."></textarea>
-        </div>
-        <div class="col-12">
-         <label class="form-label fw-semibold">Дараа 7 хоногт хийх ажил</label>
-         <textarea class="form-control" id="f-hiikh" name="hiikh_ajil" rows="4" placeholder="Хийх ажлаа бичнэ үү..."></textarea>
-        </div>
-        <div class="col-12">
-         <label class="form-label fw-semibold">Тэмдэглэл / санал</label>
-         <textarea class="form-control" id="f-temdeg" name="temdegleltar" rows="2" placeholder="Нэмэлт тэмдэглэл..."></textarea>
-        </div>
-       </div>
-       </div>
        <div class="d-flex gap-2 mt-4 flex-wrap">
         <button type="submit" class="btn px-4" id="submit-btn">
          <i class="bi bi-send me-1"></i>Илгээх
@@ -1373,8 +1356,6 @@ function renderReportForm(){
     if(dmb) dmb.style.display='';
     const daw=document.getElementById('daily-aggregate-wrap');
     if(daw) daw.style.display='none';
-    const gs=document.getElementById('report-general-section');
-    if(gs) gs.style.display='none';
     const sb=document.getElementById('submit-btn');
     if(sb) sb.innerHTML='<i class="bi bi-floppy me-1"></i>Тэмдэглэл хадгалах';
   } else {
@@ -1383,8 +1364,6 @@ function renderReportForm(){
     if(dmb) dmb.style.display='none';
     const daw=document.getElementById('daily-aggregate-wrap');
     if(daw) daw.style.display=(loggedInUser&&loggedInUser.role!=='head'&&!isAdmin)?'':'none';
-    const gs=document.getElementById('report-general-section');
-    if(gs) gs.style.display='';
     const sb=document.getElementById('submit-btn');
     if(sb) sb.innerHTML='<i class="bi bi-send me-1"></i>Илгээх';
   }
