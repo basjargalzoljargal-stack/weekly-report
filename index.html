@@ -1221,7 +1221,8 @@ function renderReportForm(){
 }
 
 // ── Submit report ───────────────────────────────────────
-async function submitReport(){
+async function submitReport(e){
+  if(e) e.preventDefault();
   if(!currentUser||!currentWeek) return;
   const btn=document.getElementById('submit-btn');
   btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Хадгалж байна...';
@@ -1281,6 +1282,67 @@ function populateWeekSelector(){
   }
 }
 
+// ── Consolidated helpers ────────────────────────────────
+function consPersonDetail(u,d){
+  const secs=ROLE_FORMS[u.role]||[];
+  let html='';
+  for(const sec of secs){
+    html+=`<div class="mb-2"><strong class="text-primary" style="font-size:.8rem">${sec.t}</strong>`;
+    if(sec.table){
+      html+=`<div class="table-responsive"><table class="table table-sm table-bordered mb-0 mt-1"><thead><tr><th style="font-size:.75rem">Ангилал</th>${sec.cols.map(c=>`<th style="font-size:.75rem">${c.l}</th>`).join('')}</tr></thead><tbody>`;
+      for(const cat of sec.cats){
+        const ck='tbl_'+catKey(cat)+'__';
+        html+=`<tr><td style="font-size:.75rem">${cat}</td>`;
+        for(const col of sec.cols){
+          const subs=col.stack||[{id:col.id,u:col.u}];
+          html+=`<td style="font-size:.75rem">`;
+          for(const sub of subs){
+            const v=d[ck+sub.id];
+            const uv=d[ck+sub.id+'_unit']||sub.u||'';
+            if(v!==undefined&&v!=='') html+=`<div>${Number(v).toLocaleString()} ${uv}</div>`;
+          }
+          html+=`</td>`;
+        }
+        html+=`</tr>`;
+      }
+      html+=`</tbody></table></div>`;
+      if(sec.lav_computed){
+        const lCols=['irgen','huuliin_etgeed'];
+        const lrs=cat=>lCols.reduce((s,col)=>{const v=d['tbl_'+catKey(cat)+'__'+col];return s+(v!==undefined&&v!==''?parseFloat(v)||0:0);},0);
+        const lc1=lrs('Нэг цэг')+lrs('Орон нутаг')+lrs('Төрийн эрх бүхий байгууллага')+lrs('Хүсэлт');
+        const lc2=lrs('Арилжааны банк');
+        html+=`<div class="d-flex gap-3 mt-1 flex-wrap" style="font-size:.8rem">
+          <span style="color:#155724"><strong>${lc1} ш</strong> Шүүхийн лавл.</span>
+          <span style="color:#0d6efd"><strong>${lc2} ш</strong> Арилжааны банк</span>
+          <span class="fw-bold">Нийт: ${lc1+lc2} ш</span></div>`;
+      }
+    } else if(sec.f){
+      html+=`<div class="row g-1 mt-1">`;
+      for(const f of sec.f){
+        if(f.dyn){
+          let rows=[];try{if(d[f.id])rows=JSON.parse(d[f.id]);}catch(e){}
+          if(rows.length){html+=`<div class="col-12" style="font-size:.78rem"><span class="text-muted">${f.l}:</span><ul class="mb-0 ps-3">`;for(const r of rows)html+=`<li>${r.l}: <strong>${r.n}</strong></li>`;html+=`</ul></div>`;}
+        } else if(f.negj){
+          let rows=[];try{if(d[f.id])rows=JSON.parse(d[f.id]);}catch(e){}
+          if(rows.length){html+=`<div class="col-12" style="font-size:.78rem"><span class="text-muted">${f.l}:</span><ul class="mb-0 ps-3">`;for(const r of rows)html+=`<li>${r.t}: <strong>${r.n}</strong></li>`;html+=`</ul></div>`;}
+        } else if(f.ta){
+          const v=d[f.id];if(v)html+=`<div class="col-12" style="font-size:.78rem"><span class="text-muted">${f.l}:</span> ${v}</div>`;
+        } else if(f.prev){
+          const v=d[f.id],vp=d[f.id+'_prev'];
+          if(v!==undefined&&v!=='')html+=`<div class="col-md-6" style="font-size:.78rem"><span class="text-muted">${f.l}:</span> <strong>${Number(v).toLocaleString()} ${f.u||''}</strong>${vp!==undefined&&vp!==''?` <span class="text-muted">(өмнөх: ${Number(vp).toLocaleString()})</span>`:''}</div>`;
+        } else {
+          const v=d[f.id];if(v!==undefined&&v!=='')html+=`<div class="col-md-6" style="font-size:.78rem"><span class="text-muted">${f.l}:</span> <strong>${Number(v).toLocaleString()} ${f.u||''}</strong></div>`;
+        }
+      }
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+  if(d.hiiseh_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#f8f9fa;font-size:.78rem"><strong>Хийсэн ажил:</strong> ${d.hiiseh_ajil}</div>`;
+  if(d.daraa_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#f8f9fa;font-size:.78rem"><strong>Дараагийн 7 хоногт:</strong> ${d.daraa_ajil}</div>`;
+  return html;
+}
+
 // ── Consolidated view ───────────────────────────────────
 async function loadConsolidated(){
   const el=document.getElementById('view-consolidated');
@@ -1294,96 +1356,40 @@ async function loadConsolidated(){
   await loadUsers();
   await loadWeekReports(weekStart);
   let html='';
-  const depts=DEPT_ORDER;
-  for(const dk of depts){
+  for(const dk of DEPT_ORDER){
     const dus=allUsers.filter(u=>u.department===dk&&u.isActive&&u.role!=='head');
     if(!dus.length) continue;
-    html+=`<div class="sec-head">${DEPT_NAMES[dk]}</div>`;
-    for(const u of dus){
+    const doneCount=dus.filter(u=>!!allReports[u.id]).length;
+    html+=`<div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>${DEPT_NAMES[dk]}</strong>
+        <span class="badge ${doneCount===dus.length?'bg-success':'bg-warning text-dark'}">${doneCount}/${dus.length} илгээсэн</span>
+      </div>
+      <div class="card-body p-0">`;
+    // Accordion: one item per person
+    for(let i=0;i<dus.length;i++){
+      const u=dus[i];
       const rep=allReports[u.id];
       const d=rep?.data||{};
       const done=!!rep;
-      html+=`<div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-person me-1"></i>${u.rank} ${u.name} — <small style="opacity:.8">${ROLE_LABELS[u.role]||u.role}</small></span>
-          ${done?`<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>${rep.submittedAt||'Илгээсэн'}</span>`:'<span class="badge bg-danger">Илгээгүй</span>'}
+      const cid=`cons_${u.id}`;
+      html+=`<div style="border-bottom:1px solid #dee2e6">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="cursor:pointer;background:${done?'#f8f9fa':'#fff8f0'}" onclick="document.getElementById('${cid}').classList.toggle('d-none')">
+          <div>
+            <span class="fw-semibold" style="font-size:.9rem">${u.rank} ${u.name}</span>
+            <span class="text-muted ms-2" style="font-size:.78rem">${ROLE_LABELS[u.role]||u.role}</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            ${done?`<span class="text-muted" style="font-size:.72rem">${rep.submittedAt||''}</span><span class="badge bg-success">Илгээсэн</span>`:'<span class="badge bg-danger">Илгээгүй</span>'}
+            <i class="bi bi-chevron-down" style="font-size:.75rem;color:#6c757d"></i>
+          </div>
         </div>
-        <div class="card-body py-2">`;
-      if(!done){
-        html+=`<p class="text-muted mb-0">Тайлан илгээгүй байна.</p>`;
-      } else {
-        const secs=ROLE_FORMS[u.role]||[];
-        for(const sec of secs){
-          html+=`<div class="mb-2"><strong class="text-primary small">${sec.t}</strong>`;
-          if(sec.table){
-            html+=`<div class="table-responsive"><table class="table table-sm table-bordered mb-0"><thead><tr><th>Ангилал</th>${sec.cols.map(c=>`<th>${c.l}</th>`).join('')}</tr></thead><tbody>`;
-            for(const cat of sec.cats){
-              const ck='tbl_'+catKey(cat)+'__';
-              html+=`<tr><td class="small">${cat}</td>`;
-              for(const col of sec.cols){
-                const subs=col.stack||[{id:col.id,u:col.u}];
-                html+=`<td class="small">`;
-                for(const sub of subs){
-                  const v=d[ck+sub.id];
-                  const uv=d[ck+sub.id+'_unit']||sub.u||'';
-                  if(v!==undefined&&v!=='') html+=`<div>${Number(v).toLocaleString()} ${uv}</div>`;
-                  else html+=`<div class="text-muted">—</div>`;
-                }
-                html+=`</td>`;
-              }
-              html+=`</tr>`;
-            }
-            html+=`</tbody></table></div>`;
-            if(sec.lav_computed){
-              // Compute lav sums from saved data
-              function lavRowSum(cat,cols){return cols.reduce((s,col)=>{const v=d['tbl_'+catKey(cat)+'__'+col];return s+(v!==undefined&&v!==''?parseFloat(v)||0:0);},0);}
-              const lCols=['irgen','huuliin_etgeed'];
-              const lc1=lavRowSum('Нэг цэг',lCols)+lavRowSum('Орон нутаг',lCols)+lavRowSum('Төрийн эрх бүхий байгууллага',lCols)+lavRowSum('Хүсэлт',lCols);
-              const lc2=lavRowSum('Арилжааны банк',lCols);
-              const lc3=lc1+lc2;
-              html+=`<div class="mt-2 p-2 rounded d-flex gap-3 flex-wrap" style="background:#e8f4e8;border:1px solid #198754">
-                <div class="text-center"><div style="font-size:.65rem;color:#6c757d">Шүүхийн шийдвэрийн тодорхойлолт<br>(Нэг цэг+Орон нутаг+Төрийн эрх+Хүсэлт)</div><strong style="color:#155724;font-size:1.1rem">${lc1} ш</strong></div>
-                <div class="text-center"><div style="font-size:.65rem;color:#6c757d">Арилжааны банк дамжуулан</div><strong style="color:#0d6efd;font-size:1.1rem">${lc2} ш</strong></div>
-                <div class="text-center p-1 rounded" style="background:#155724"><div style="font-size:.65rem;color:rgba(255,255,255,.7)">НИЙТ</div><strong style="color:#fff;font-size:1.1rem">${lc3} ш</strong></div>
-              </div>`;
-            }
-          } else if(sec.f){
-            html+=`<div class="row g-1 mt-1">`;
-            for(const f of sec.f){
-              if(f.dyn){
-                let rows=[];
-                try{if(d[f.id]) rows=JSON.parse(d[f.id]);}catch(e){}
-                html+=`<div class="col-12"><span class="text-muted small">${f.l}:</span><ul class="mb-0 ps-3">`;
-                for(const r of rows) html+=`<li class="small">${r.l}: <strong>${r.n}</strong></li>`;
-                html+=`</ul></div>`;
-              } else if(f.negj){
-                let rows=[];
-                try{if(d[f.id]) rows=JSON.parse(d[f.id]);}catch(e){}
-                html+=`<div class="col-12"><span class="text-muted small">${f.l}:</span><ul class="mb-0 ps-3">`;
-                for(const r of rows) html+=`<li class="small">${r.t}: <strong>${r.n}</strong></li>`;
-                html+=`</ul></div>`;
-              } else if(f.prev){
-                const v=d[f.id]; const vp=d[f.id+'_prev'];
-                html+=`<div class="col-md-6 small"><span class="text-muted">${f.l}:</span> <strong>${v!==undefined&&v!==''?Number(v).toLocaleString():'—'} ${f.u||''}</strong>`;
-                if(vp!==undefined&&vp!=='') html+=` <span class="text-muted">(өмнөх он: ${Number(vp).toLocaleString()})</span>`;
-                html+=`</div>`;
-              } else if(f.ta){
-                const v=d[f.id];
-                if(v) html+=`<div class="col-12 small"><span class="text-muted">${f.l}:</span> ${v}</div>`;
-              } else {
-                const v=d[f.id];
-                if(v!==undefined&&v!=='') html+=`<div class="col-md-6 small"><span class="text-muted">${f.l}:</span> <strong>${Number(v).toLocaleString()} ${f.u||''}</strong></div>`;
-              }
-            }
-            html+=`</div>`;
-          }
-          html+=`</div>`;
-        }
-        if(d.hiiseh_ajil) html+=`<div class="mt-2 p-2 rounded" style="background:#f8f9fa"><strong class="small">Хийсэн ажил:</strong><p class="mb-0 small">${d.hiiseh_ajil}</p></div>`;
-        if(d.daraa_ajil) html+=`<div class="mt-1 p-2 rounded" style="background:#f8f9fa"><strong class="small">Дараагийн 7 хоногт:</strong><p class="mb-0 small">${d.daraa_ajil}</p></div>`;
-      }
-      html+=`</div></div>`;
+        <div id="${cid}" class="d-none px-3 py-2" style="background:#fff">
+          ${done?consPersonDetail(u,d):'<p class="text-muted mb-0">Тайлан илгээгүй байна.</p>'}
+        </div>
+      </div>`;
     }
+    html+=`</div></div>`;
   }
   if(!html) html='<div class="alert alert-info">Энэ 7 хоногт тайлан байхгүй байна.</div>';
   el.querySelector('#cons-body').innerHTML=html;
