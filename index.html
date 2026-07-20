@@ -11,7 +11,7 @@
 :root{
   --navy:#162347;--navy2:#1e3461;--blue:#2c5cc5;--sky:#4a90d9;
   --gold:#f5a623;--gold2:#e8950e;
-  --bg:#f0f4f9;--surface:#ffffff;--border:#dde3ed;
+  --bg:#eaeff6;--surface:#f5f8fc;--border:#dde3ed;
   --text:#1a2236;--muted:#637085;
   --success:#0d9e6e;--danger:#d63031;--warn:#f59e0b;
   --radius:14px;--radius-sm:8px;
@@ -118,12 +118,12 @@ body{
   color:#fff;border-radius:0!important;font-weight:600;
   padding:14px 20px;border-bottom:none;font-size:.92rem
 }
-.card-body{padding:20px}
+.card-body{padding:20px;background:#f5f8fc}
 
 /* ── SECTION HEADERS ────────────────── */
 .sec-head{
   display:flex;align-items:center;gap:8px;
-  background:linear-gradient(90deg,#eef2fb 0%,#f8f9fc 100%);
+  background:linear-gradient(90deg,#dce6f5 0%,#eaf0f9 100%);
   border-left:4px solid var(--blue);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
   padding:10px 16px;margin:24px 0 14px;
   font-weight:600;color:var(--navy);font-size:.88rem;
@@ -133,7 +133,7 @@ body{
 
 /* ── USER CARDS ─────────────────────── */
 .user-card{
-  background:#fff;border:1.5px solid var(--border);border-radius:12px;
+  background:#edf2f9;border:1.5px solid var(--border);border-radius:12px;
   padding:14px 16px;cursor:pointer;transition:.2s;
   display:flex;align-items:center;gap:14px;
   box-shadow:0 1px 4px rgba(22,35,71,.04)
@@ -142,8 +142,8 @@ body{
   background:#f0f5ff;border-color:var(--sky);
   box-shadow:0 4px 16px rgba(44,92,197,.1);transform:translateY(-1px)
 }
-.user-card.done-card{border-color:#b7e4d1;background:#f0fdf8}
-.user-card.done-card:hover{background:#e6faf3}
+.user-card.done-card{border-color:#a8dcc5;background:#e8f8f1}
+.user-card.done-card:hover{background:#daf4e9}
 
 /* ── AVATAR ─────────────────────────── */
 .avatar{
@@ -158,7 +158,7 @@ body{
 .form-control,.form-select{
   border:1.5px solid var(--border);border-radius:9px;
   padding:9px 13px;font-size:.9rem;
-  background:#f8fafc;color:var(--text);transition:.2s
+  background:#edf1f7;color:var(--text);transition:.2s
 }
 .form-control:focus,.form-select:focus{
   border-color:var(--blue);background:#fff;
