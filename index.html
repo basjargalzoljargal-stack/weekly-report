@@ -1688,18 +1688,18 @@ function renderRoleAgg(role, aggD, submitters){
         const lrs=cat=>lCols.reduce((s,col)=>s+(parseFloat(aggD['tbl_'+catKey(cat)+'__'+col])||0),0);
         const lc1=lrs('Нэг цэг')+lrs('Орон нутаг')+lrs('Төрийн эрх бүхий байгууллага')+lrs('Хүсэлт');
         const lc2=lrs('Арилжааны банк');
-        html+=`<div class="d-flex gap-3 mt-2 flex-wrap p-2 rounded" style="background:#e8f4e8;font-size:.82rem">
-          <span><strong style="color:#155724;font-size:1rem">${lc1} ш</strong> Шүүхийн шийдвэрийн тодорхойлолт</span>
-          <span><strong style="color:#0d6efd;font-size:1rem">${lc2} ш</strong> Арилжааны банк</span>
-          <span class="fw-bold">Нийт: <strong style="font-size:1rem">${lc1+lc2} ш</strong></span></div>`;
+        html+=`<div class="d-flex gap-3 mt-2 flex-wrap p-2 rounded" style="background:#0d1526;border:1px solid rgba(16,185,129,.3);font-size:.82rem">
+          <span><strong style="color:#34d399;font-size:1rem">${lc1} ш</strong> Шүүхийн шийдвэрийн тодорхойлолт</span>
+          <span><strong style="color:#00d4ff;font-size:1rem">${lc2} ш</strong> Арилжааны банк</span>
+          <span class="fw-bold" style="color:#eef2ff">Нийт: <strong style="font-size:1rem">${lc1+lc2} ш</strong></span></div>`;
       }
       if(sec.medee_summary){
         const ck2='tbl_нэгдсэн_мэдээ__';
         const biToo=aggD[ck2+'bieluu_too']||0, boToo=aggD[ck2+'bodit_too']||0, ulToo=aggD[ck2+'uldegdel_too']||0;
         html+=`<div class="d-flex gap-2 mt-2 flex-wrap">
-          <div class="p-2 rounded text-center" style="background:#e8f4e8;min-width:100px"><div style="font-size:.65rem;color:#6c757d">Гүйцэтгэвэл зохих</div><strong>${biToo.toLocaleString()} ш</strong></div>
-          <div class="p-2 rounded text-center" style="background:#fff3cd;min-width:100px"><div style="font-size:.65rem;color:#6c757d">Гүйцэтгэсэн</div><strong>${boToo.toLocaleString()} ш</strong></div>
-          <div class="p-2 rounded text-center" style="background:#f8d7da;min-width:100px"><div style="font-size:.65rem;color:#6c757d">Үлдэгдэл</div><strong>${ulToo.toLocaleString()} ш</strong></div></div>`;
+          <div class="p-2 rounded text-center" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);min-width:100px"><div style="font-size:.65rem;color:#8aaace">Гүйцэтгэвэл зохих</div><strong style="color:#34d399">${biToo.toLocaleString()} ш</strong></div>
+          <div class="p-2 rounded text-center" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);min-width:100px"><div style="font-size:.65rem;color:#8aaace">Гүйцэтгэсэн</div><strong style="color:#fbbf24">${boToo.toLocaleString()} ш</strong></div>
+          <div class="p-2 rounded text-center" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);min-width:100px"><div style="font-size:.65rem;color:#8aaace">Үлдэгдэл</div><strong style="color:#fb7185">${ulToo.toLocaleString()} ш</strong></div></div>`;
       }
     } else if(sec.f){
       const numFields=sec.f.filter(f=>!f.ta&&!f.dyn&&!f.negj&&!f.allowNeg);
@@ -1715,9 +1715,9 @@ function renderRoleAgg(role, aggD, submitters){
             if(vp) extra=` <span class="text-muted">(өмнөх: ${Number(vp).toLocaleString()})</span>`;
           }
           html+=`<div class="col-md-4 col-6">
-            <div class="p-2 rounded text-center" style="background:#f0f4ff;border:1px solid #c8d5f0">
-              <div style="font-size:.65rem;color:#6c757d;margin-bottom:2px">${f.l}</div>
-              <strong style="font-size:1.1rem">${Number(v).toLocaleString()}</strong> <span style="font-size:.75rem;color:#6c757d">${f.u||''}</span>${extra}
+            <div class="p-2 rounded text-center" style="background:#111e35;border:1px solid #26395a">
+              <div style="font-size:.65rem;color:#8aaace;margin-bottom:2px">${f.l}</div>
+              <strong style="font-size:1.1rem;color:#eef2ff">${Number(v).toLocaleString()}</strong> <span style="font-size:.75rem;color:#8aaace">${f.u||''}</span>${extra}
             </div>
           </div>`;
         }
@@ -1778,8 +1778,8 @@ function consPersonDetail(u,d){
     }
     html+=`</div>`;
   }
-  if(d.hiiseh_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#f8f9fa;font-size:.76rem"><strong>Хийсэн ажил:</strong> ${d.hiiseh_ajil}</div>`;
-  if(d.daraa_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#f8f9fa;font-size:.76rem"><strong>Дараагийн 7 хоногт:</strong> ${d.daraa_ajil}</div>`;
+  if(d.hiiseh_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#111e35;border:1px solid #1e2d45;font-size:.76rem;color:#eef2ff"><strong style="color:#00d4ff">Хийсэн ажил:</strong> ${d.hiiseh_ajil}</div>`;
+  if(d.daraa_ajil)html+=`<div class="p-2 rounded mt-1" style="background:#111e35;border:1px solid #1e2d45;font-size:.76rem;color:#eef2ff"><strong style="color:#7c3aed">Дараагийн 7 хоногт:</strong> ${d.daraa_ajil}</div>`;
   return html;
 }
 
@@ -1813,9 +1813,9 @@ async function loadConsolidated(){
       const roleUsers=dus.filter(u=>u.role===role);
       const submitted=roleUsers.filter(u=>!!allReports[u.id]);
       const notSubmitted=roleUsers.filter(u=>!allReports[u.id]);
-      html+=`<div class="mb-4 p-3 rounded" style="border:1.5px solid #dee2e6">
+      html+=`<div class="mb-4 p-3 rounded" style="border:1.5px solid #1e2d45;background:#0d1526">
         <div class="d-flex align-items-center justify-content-between mb-3">
-          <span class="fw-bold" style="color:#1a3a6b">${ROLE_LABELS[role]||role}</span>
+          <span class="fw-bold" style="color:#00d4ff">${ROLE_LABELS[role]||role}</span>
           <div class="d-flex gap-1 flex-wrap">`;
       for(const u of roleUsers){
         const done=!!allReports[u.id];
@@ -1837,8 +1837,8 @@ async function loadConsolidated(){
             <div id="${detId}" class="d-none mt-2">`;
           for(const u of submitted){
             const d=allReports[u.id].data||{};
-            html+=`<div class="mb-2 p-2 rounded" style="background:#f8f9fa;border:1px solid #e0e0e0">
-              <div class="fw-semibold mb-1" style="font-size:.8rem"><i class="bi bi-person me-1"></i>${u.rank} ${u.name} <span class="text-muted">${allReports[u.id].submittedAt||''}</span></div>
+            html+=`<div class="mb-2 p-2 rounded" style="background:#111e35;border:1px solid #26395a">
+              <div class="fw-semibold mb-1" style="font-size:.8rem;color:#eef2ff"><i class="bi bi-person me-1" style="color:#00d4ff"></i>${u.rank} ${u.name} <span style="color:#8aaace">${allReports[u.id].submittedAt||''}</span></div>
               ${consPersonDetail(u,d)}
             </div>`;
           }
